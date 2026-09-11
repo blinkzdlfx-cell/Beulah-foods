@@ -1,0 +1,21 @@
+/* Design tokens for the admin dashboard. See DESIGN.md — functional,
+   professional, visually distinct from the storefront. */
+:root {
+  --color-bg: #f4f5f7;
+  --color-surface: #ffffff;
+  --color-text: #1a1d1f;
+  --color-text-muted: #6b7076;
+  --color-accent: #2f6b4f;
+  --color-danger: #b3413a;
+  --color-border: #dfe1e4;
+
+  --font-base: system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 40px;
+
+  --radius: 6px;
+}
