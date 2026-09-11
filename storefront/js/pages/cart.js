@@ -1,6 +1,7 @@
 import { initHeader } from "../components/navbar.js";
 import { getProductsByIds } from "../services/catalogService.js";
 import { getCart, updateCartQuantity, removeFromCart } from "../services/cartService.js";
+import { showToast } from "../components/toast.js";
 
 initHeader(document.getElementById("site-header-nav"));
 const list = document.getElementById("cart-list"), empty = document.getElementById("cart-empty"), summary = document.getElementById("cart-summary"), subtotalEl = document.getElementById("cart-subtotal"), status = document.getElementById("cart-status"), checkoutLink = document.getElementById("checkout-link");
@@ -11,6 +12,7 @@ function setQuantity(productId, quantity, max) {
   const nextQuantity = Math.max(1, Math.min(max, Number(quantity) || 1));
   updateCartQuantity(productId, nextQuantity);
   render();
+  showToast(`Quantity updated to ${nextQuantity}.`);
 }
 async function render() {
   setStatus("Loading cart...");
@@ -46,7 +48,7 @@ async function render() {
       row.querySelector(".cart-quantity-button--minus").addEventListener("click", () => setQuantity(product.id, Number(input.value) - 1, max));
       row.querySelector(".cart-quantity-button--plus").addEventListener("click", () => setQuantity(product.id, Number(input.value) + 1, max));
       input.addEventListener("change", (event) => setQuantity(product.id, event.target.value, max));
-      row.querySelector(".cart-remove").addEventListener("click", () => { removeFromCart(product.id); render(); });
+      row.querySelector(".cart-remove").addEventListener("click", () => { removeFromCart(product.id); render(); showToast(`${product.name} removed from cart.`); });
       list.append(row);
     }
 
@@ -59,6 +61,7 @@ async function render() {
   } catch (error) {
     console.error(error);
     setStatus("We could not load your cart. Please try again.", "error");
+    showToast("We could not load your cart. Please try again.", "error", 3600);
   }
 }
 render();
