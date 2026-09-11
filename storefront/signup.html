@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign up — Beulah Foods</title>
+  <base href="/storefront/" />
+  <title>Create account — Beulah Foods</title>
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/components.css" />
@@ -11,45 +12,59 @@
 </head>
 <body>
   <header class="site-header">
-    <a class="site-header__logo" href="index.html">Beulah Foods</a>
-    <nav id="site-header-nav" class="site-header__nav" hidden></nav>
+    <div class="site-header__inner">
+      <a class="site-header__logo-wrap" href="index.html" aria-label="Beulah Foods home">
+        <span class="site-header__mark" aria-hidden="true">B</span>
+        <span class="site-header__brand">Beulah Foods</span>
+      </a>
+      <nav id="site-header-nav" class="site-header__nav" aria-label="Main navigation" hidden></nav>
+    </div>
   </header>
 
   <main class="auth-page">
-    <div class="auth-card card">
-      <h1>Create your account</h1>
-      <p class="auth-card__subtitle">It only takes a minute.</p>
-
-      <div id="form-alert" class="alert" role="alert" hidden></div>
-
-      <form id="signup-form" novalidate>
-        <div class="form-field">
-          <label for="full-name">Full name</label>
-          <input id="full-name" name="fullName" type="text" autocomplete="name" required />
+    <section class="auth-shell" aria-label="Create customer account">
+      <aside class="auth-intro">
+        <div class="auth-intro__brand"><span class="auth-intro__mark">B</span> Beulah Foods</div>
+        <div class="auth-intro__content">
+          <p class="eyebrow">Start here</p>
+          <h1>Make everyday food shopping simpler.</h1>
+          <p>Create your account once, then keep your contact and delivery details ready for your future orders.</p>
         </div>
+      </aside>
 
-        <div class="form-field">
-          <label for="email">Email</label>
-          <input id="email" name="email" type="email" autocomplete="email" required />
-        </div>
+      <div class="auth-card">
+        <h2>Create your account</h2>
+        <p class="auth-card__subtitle">It only takes a minute to get started.</p>
 
-        <div class="form-field">
-          <label for="password">Password</label>
-          <input id="password" name="password" type="password" autocomplete="new-password" required />
-        </div>
+        <div id="form-alert" class="alert" role="alert" hidden></div>
 
-        <div class="form-field">
-          <label for="confirm-password">Confirm password</label>
-          <input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password" required />
-        </div>
+        <form id="signup-form" novalidate>
+          <div class="form-field">
+            <label for="full-name">Full name</label>
+            <input id="full-name" name="fullName" type="text" autocomplete="name" required />
+          </div>
 
-        <button type="submit" class="btn btn-primary" id="signup-submit">Sign up</button>
-      </form>
+          <div class="form-field">
+            <label for="email">Email address</label>
+            <input id="email" name="email" type="email" autocomplete="email" required />
+          </div>
 
-      <p class="auth-card__footer">
-        Already have an account? <a href="login.html">Log in</a>
-      </p>
-    </div>
+          <div class="form-field">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="new-password" required />
+          </div>
+
+          <div class="form-field">
+            <label for="confirm-password">Confirm password</label>
+            <input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password" required />
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="signup-submit">Create account</button>
+        </form>
+
+        <p class="auth-card__footer">Already have an account? <a href="login.html">Log in</a></p>
+      </div>
+    </section>
   </main>
 
   <script type="module" src="js/pages/signup.js"></script>
