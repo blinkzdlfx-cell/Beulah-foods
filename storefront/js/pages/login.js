@@ -1,6 +1,7 @@
 import { signInCustomer } from "../services/authService.js";
 import { isValidEmail } from "../utils/validators.js";
 import { initHeader } from "../components/navbar.js";
+import { showToast } from "../components/toast.js";
 
 initHeader(document.getElementById("site-header-nav"));
 
@@ -22,10 +23,13 @@ form.addEventListener("submit", async (event) => {
   setLoading(true);
   try {
     await signInCustomer({ email, password });
-    window.location.href = redirectTarget;
+    showToast("Logged in successfully.");
+    window.setTimeout(() => { window.location.href = redirectTarget; }, 250);
   } catch (error) {
     setLoading(false);
-    showAlert("error", describeLoginError(error));
+    const message = describeLoginError(error);
+    showAlert("error", message);
+    showToast(message, "error", 3600);
   }
 });
 
