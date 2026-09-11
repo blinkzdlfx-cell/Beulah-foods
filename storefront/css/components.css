@@ -1,5 +1,95 @@
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(250, 249, 246, 0.94);
+  border-bottom: 1px solid rgba(31, 35, 32, 0.08);
+  backdrop-filter: blur(14px);
+}
+
+.site-header__inner {
+  width: min(1180px, calc(100% - 32px));
+  min-height: 76px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.site-header__logo-wrap,
+.site-header__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-text);
+  text-decoration: none;
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.site-header__logo-wrap {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.site-header__mark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--color-accent);
+  color: #fff;
+  font-family: var(--font-base);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.site-header__brand {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
 .site-header__nav[hidden] {
   display: none;
+}
+
+.site-header__nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.site-header__nav a:not(.btn),
+.site-header__nav button:not(.btn) {
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 0.9rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.site-header__nav a:not(.btn):hover,
+.site-header__nav button:not(.btn):hover {
+  background: rgba(47, 107, 79, 0.07);
+  color: var(--color-text);
+}
+
+.site-header__account-link {
+  color: var(--color-accent-dark) !important;
+  font-weight: 700 !important;
 }
 
 .btn {
@@ -104,4 +194,28 @@
 
 .alert[hidden] {
   display: none;
+}
+
+@media (max-width: 620px) {
+  .site-header__inner {
+    min-height: 68px;
+    width: min(100% - 24px, 1180px);
+    gap: 12px;
+  }
+
+  .site-header__nav {
+    gap: 2px;
+  }
+
+  .site-header__nav a:not(.btn),
+  .site-header__nav button:not(.btn) {
+    padding: 8px;
+    font-size: 0.82rem;
+  }
+
+  .site-header__nav .btn {
+    min-height: 40px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+  }
 }
