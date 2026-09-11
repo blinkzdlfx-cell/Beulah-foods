@@ -108,13 +108,14 @@ function setEditMode(editing) {
   form.hidden = !editing;
   editButton.hidden = editing;
   cancelButton.hidden = !editing;
-  saveButton.hidden = !editing || !hasChanges();
-  saveButton.disabled = false;
+  saveButton.hidden = !editing;
+  saveButton.disabled = !hasChanges();
   saveButton.textContent = "Save changes";
 }
 
 function updateDirtyState() {
-  saveButton.hidden = !hasChanges();
+  saveButton.hidden = false;
+  saveButton.disabled = !hasChanges();
 }
 
 function hasChanges() {
