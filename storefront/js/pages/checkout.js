@@ -189,7 +189,7 @@ function renderPendingOrder(order) {
   renderSummary({
     subtotal: order.subtotal,
     delivery_fee: order.delivery_fee,
-    delivery_enabled: Number(order.delivery_fee) > 0,
+    delivery_enabled: true,
     discount: order.discount_amount,
     total: order.total,
   });
