@@ -1,99 +1,102 @@
 # FEATURES.md — Beulah Foods
 
-Status legend: ⬜ not started · 🟨 in progress · ✅ done
+Status legend: ⬜ not started · 🟨 in progress · ✅ implemented
 
-Nothing below is built yet — this list is scope, not a changelog. Update
-the status column as work actually happens; don't mark something ✅
-until it's connected to real Supabase data and tested.
+This file reflects the current repository state. Live-provider features remain in progress until the relevant service is configured and end-to-end tested.
 
 ## Customer — Authentication
-- 🟨 Sign up (UI built, uses real Supabase Auth — not yet run against a live project to confirm end-to-end)
-- 🟨 Sign in / log in (same — built, not yet verified against a live project)
-- 🟨 Log out (built into the shared header, same caveat)
-- 🟨 Forgot password (UI built — `forgot-password.html`/`forgot-password.js`, calls `authService.requestPasswordReset()` — not yet run against a live Supabase project to confirm end-to-end)
-- 🟨 Reset password (UI built — `reset-password.html`/`reset-password.js`, handles the Supabase recovery-session redirect and calls `authService.updatePassword()` — same caveat, and depends on the Redirect URL being configured; see `supabase/README.md`)
-- 🟨 Maintain an authenticated session (session-aware header built; no protected page exists yet to fully exercise this)
+- ✅ Sign up / email confirmation flow
+- ✅ Sign in / log in
+- ✅ Log out
+- 🟨 Forgot password
+- 🟨 Reset password
+- ✅ Maintain authenticated session
 
 ## Customer — Account
-- ⬜ View account
-- ⬜ Edit name
-- ⬜ Edit phone number
-- ⬜ Edit delivery address
+- ✅ View account
+- ✅ Edit name
+- ✅ Edit phone number
+- ✅ Edit delivery address
 
 ## Customer — Shopping
-- ⬜ Browse products
-- ⬜ View product details
-- ⬜ Add products to cart
-- ⬜ Change quantities
-- ⬜ Remove products
-- ⬜ View cart
-- ⬜ Proceed to checkout
+- ✅ Browse live products
+- ✅ View product details
+- ✅ Add products to cart
+- ✅ Change quantities
+- ✅ Remove products
+- ✅ View cart
+- 🟨 Proceed to trusted checkout
 
 ## Customer — Checkout
-- ⬜ Review products
-- ⬜ Review quantities
-- ⬜ Review subtotal
-- ⬜ Review applicable fees
+- ✅ Review products and quantities
+- ✅ Review live subtotal
+- 🟨 Review applicable fees — fee rules not yet approved/configured
 - ⬜ Apply promo code
 - ⬜ Review discount
-- ⬜ Review final payable amount
-- ⬜ Confirm checkout
+- 🟨 Review final payable amount — currently provider-neutral subtotal only until fee/discount rules exist
+- 🟨 Confirm checkout — creates a trusted pending order and 15-minute reservation; payment is not initialized
 
 ## Customer — Orders / Payment
-- ⬜ Create a 15-minute reservation before payment
+- 🟨 Create a 15-minute reservation before payment
 - ⬜ Initialize payment
-- ⬜ Complete payment through the selected payment provider *(provider not yet chosen — see RULES.md/open decisions)*
-- ⬜ Verify payment server-side (never trust the browser redirect alone)
-- ⬜ Handle pending payment
+- ⬜ Complete payment through selected provider — provider not yet chosen
+- ⬜ Verify payment server-side
+- 🟨 Handle pending payment
 - ⬜ Handle successful payment
 - ⬜ Handle failed payment
-- ⬜ Show appropriate payment result screen
-- ⬜ Create/confirm the order after verified successful payment
-- ⬜ View own orders (authenticated)
-- ⬜ View individual order details
+- ⬜ Show final payment result screen
+- 🟨 Create pending order through trusted RPC; final paid/confirmed transition remains provider-dependent
+- ✅ View own orders
+- ✅ View individual order details
 
 ## Admin — Dashboard
-- ⬜ Overview
+- 🟨 Authenticated admin shell
+- 🟨 Product/category/inventory overview metrics
 - ⬜ Sales information
-- ⬜ Order information
-- ⬜ Payment information
-- ⬜ Inventory information
+- 🟨 Order information foundation
+- 🟨 Payment information foundation
+- 🟨 Inventory information
 - ⬜ Recent activity
 
+## Admin — Authorization
+- 🟨 Explicit `admin_users` authorization table and database `is_admin()` helper
+- 🟨 Trusted-only admin provisioning boundary
+- 🟨 Admin login authorization check
+
 ## Admin — Products
-- ⬜ Add product
-- ⬜ Edit product
-- ⬜ Deactivate product
-- ⬜ Reactivate product
-- ⬜ Delete product (non-destructive to historical orders — see RULES.md)
-- ⬜ Manage product information / pricing / availability
+- ✅ Add product
+- ✅ Edit product
+- ✅ Deactivate product
+- ✅ Reactivate product
+- 🟨 Delete product — UI deletion remains intentionally conservative until historical deletion policy is finalized
+- ✅ Manage product information / pricing / availability
 
 ## Admin — Categories
-- ⬜ Create
-- ⬜ Edit
-- ⬜ Manage categories
+- ✅ Create
+- 🟨 Edit/manage existing categories
+- ✅ Activate / deactivate
 
 ## Admin — Inventory
-- ⬜ View stock
-- ⬜ Adjust stock
-- ⬜ Low-stock information
-- ⬜ Product availability
+- ✅ View stock
+- 🟨 Adjust stock through product management
+- ✅ Low-stock information
+- ✅ Product availability
 
 ## Admin — Orders
-- ⬜ View orders
+- 🟨 View orders
 - ⬜ Search / filter orders
-- ⬜ View individual orders
-- ⬜ View customer information
-- ⬜ View delivery information
-- ⬜ View order items
-- ⬜ View payment status
-- ⬜ Manage operational order status (not payment status — see RULES.md)
+- ⬜ View individual admin order detail
+- 🟨 View customer identity reference
+- ⬜ Full delivery information view
+- ⬜ Full order-item detail view
+- 🟨 View payment status
+- ⬜ Manage operational order status
 
 ## Admin — Payments / Transactions
-- ⬜ View payment records
-- ⬜ View transaction references
-- ⬜ View payment status
-- ⬜ Associate payments with orders
+- 🟨 View payment records
+- 🟨 View transaction/provider references
+- 🟨 View payment status
+- 🟨 Associate payments with orders through database relationship
 
 ## Admin — Customers
 - ⬜ View customers
@@ -117,3 +120,10 @@ until it's connected to real Supabase data and tested.
 
 ## Admin — Settings
 - ⬜ Manage approved store configuration
+
+## Infrastructure / Integration
+- 🟨 Trusted provider-neutral checkout boundary
+- ⬜ Payment provider integration
+- ⬜ Server-side payment verification
+- ⬜ Resend transactional email
+- 🟨 Clean public storefront routes
