@@ -13,15 +13,22 @@ const summary = document.getElementById("checkout-items");
 const subtotalEl = document.getElementById("checkout-subtotal");
 const deliveryRow = document.getElementById("checkout-delivery-row");
 const deliveryEl = document.getElementById("checkout-delivery");
+const discountRow = document.getElementById("checkout-discount-row");
 const discountEl = document.getElementById("checkout-discount");
 const totalEl = document.getElementById("checkout-total");
 const status = document.getElementById("checkout-status");
 const submit = document.getElementById("checkout-submit");
+const profileCard = document.getElementById("checkout-profile");
+const profileMissing = document.getElementById("checkout-profile-missing");
+const fullNameEl = document.getElementById("checkout-full-name");
+const phoneEl = document.getElementById("checkout-phone");
+const addressEl = document.getElementById("checkout-address");
 const naira = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 });
 let checkoutItems = [];
 let deliverySettings = null;
 let pendingOrderId = null;
 let currentSession = null;
+let customerProfile = null;
 
 function setStatus(message, type = "") {
   status.textContent = message;
@@ -31,6 +38,33 @@ function setStatus(message, type = "") {
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character]));
+}
+
+function hasCompleteDeliveryProfile(profile) {
+  return Boolean(
+    profile?.full_name?.trim()
+      && profile?.phone?.trim()
+      && profile?.address?.trim(),
+  );
+}
+
+function renderProfile(profile) {
+  customerProfile = profile ?? null;
+
+  const complete = hasCompleteDeliveryProfile(customerProfile);
+  profileCard.hidden = !complete;
+  profileMissing.hidden = complete;
+  submit.disabled = !complete;
+
+  fullNameEl.textContent = customerProfile?.full_name?.trim() || "—";
+  phoneEl.textContent = customerProfile?.phone?.trim() || "—";
+  addressEl.textContent = customerProfile?.address?.trim() || "—";
+
+  if (!complete) {
+    setStatus("Add your delivery details in My Account before continuing.", "error");
+  } else {
+    setStatus("");
+  }
 }
 
 async function init() {
@@ -76,15 +110,9 @@ async function init() {
   }
 
   renderSummary();
+  renderProfile(profile);
 
-  document.getElementById("full-name").value = profile?.full_name ?? "";
-  document.getElementById("phone").value = profile?.phone ?? "";
-  document.getElementById("address").value = profile?.address ?? "";
-
-  // checkout.html keeps the form hidden until initialization finishes so users never
-  // see an incomplete form. Explicitly reveal it once real data has loaded.
   form.hidden = false;
-  submit.disabled = false;
 }
 
 function isDeliveryEnabled() {
@@ -130,7 +158,8 @@ function renderSummary(totals = null) {
   subtotalEl.textContent = naira.format(subtotal);
   deliveryRow.hidden = !deliveryEnabled;
   deliveryEl.textContent = delivery === 0 ? "Free" : naira.format(delivery);
-  discountEl.textContent = discount ? `−${naira.format(discount)}` : naira.format(0);
+  discountRow.hidden = !discount;
+  discountEl.textContent = discount ? `−${naira.format(discount)}` : "—";
   totalEl.textContent = naira.format(total);
 }
 
@@ -151,12 +180,22 @@ async function initializePayment(orderId) {
     throw error;
   }
 
+  if (!data.authorization_url) {
+    throw new Error("PAYMENT_INITIALIZATION_FAILED");
+  }
+
   window.location.href = data.authorization_url;
 }
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   setStatus("");
+
+  if (!hasCompleteDeliveryProfile(customerProfile)) {
+    setStatus("Add your delivery details in My Account before continuing.", "error");
+    return;
+  }
+
   submit.disabled = true;
   submit.textContent = pendingOrderId ? "Opening payment…" : "Preparing payment…";
 
@@ -165,9 +204,9 @@ form.addEventListener("submit", async (event) => {
       const cartItems = checkoutItems.map(({ productId, quantity }) => ({ productId, quantity }));
       const { data, error } = await supabase.rpc("create_pending_order", {
         cart_items: cartItems,
-        delivery_name: form.elements.fullName.value.trim(),
-        delivery_phone: form.elements.phone.value.trim(),
-        delivery_address: form.elements.address.value.trim(),
+        delivery_name: customerProfile.full_name.trim(),
+        delivery_phone: customerProfile.phone.trim(),
+        delivery_address: customerProfile.address.trim(),
         requested_promo_code: form.elements.promoCode.value.trim() || null,
       });
 
@@ -190,15 +229,15 @@ form.addEventListener("submit", async (event) => {
     } else if (message.includes("PRODUCT_UNAVAILABLE")) {
       setStatus("One or more products are no longer available. Please return to your cart.", "error");
     } else if (message.includes("DELIVERY_DETAILS_REQUIRED")) {
-      setStatus("Please complete your delivery details.", "error");
+      setStatus("Add your delivery details in My Account before continuing.", "error");
     } else if (message.includes("DELIVERY_CONFIGURATION_INVALID")) {
-      setStatus("The store delivery settings are incomplete. Please try again later.", "error");
+      setStatus("Delivery is temporarily unavailable. Please try again later.", "error");
     } else if (message.includes("PROMO_INVALID")) {
       setStatus("That promo code is invalid or inactive.", "error");
     } else if (message.includes("PROMO_MINIMUM_NOT_MET")) {
       setStatus("This promo code does not meet the minimum order amount.", "error");
     } else if (message.includes("PAYMENT_INITIALIZATION_FAILED")) {
-      setStatus("The order is reserved, but payment could not be opened. You can retry payment without creating another order.", "error");
+      setStatus("Your order is reserved, but payment could not be opened. Please try again.", "error");
     } else {
       setStatus("We could not prepare the payment. Please try again.", "error");
     }
