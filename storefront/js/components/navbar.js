@@ -22,13 +22,18 @@ function ensureStyles() {
     .site-header__cart-link svg,.site-header__account-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
     .site-header__cart-link:hover,.site-header__account-icon:hover{background:var(--color-bg);color:var(--color-accent)}
     .site-header__cart-count{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;display:grid;place-items:center;border-radius:999px;background:var(--color-accent);color:#fff;font-size:.68rem;font-weight:800}
+    .site-header__cart-label{display:none}
     .site-header__mark{width:44px;height:44px;border-radius:50%;background:var(--color-surface) url("/storefront/assets/beulah-logo.webp") center/contain no-repeat;color:transparent;overflow:hidden}
     .site-header__menu-link{display:flex;align-items:center;width:100%;padding:11px 12px;border-radius:10px;color:var(--color-text);text-decoration:none}
     .site-header__menu-link:hover{background:var(--color-accent-soft);color:var(--color-accent-dark)}
+    .site-header__menu .site-header__cart-link{width:100%;height:auto;min-height:46px;justify-content:flex-start;margin-left:0;border:0;background:transparent;border-radius:10px;gap:10px;box-shadow:none}
+    .site-header__menu .site-header__cart-label{display:inline}
+    .site-header__menu .site-header__cart-count{top:50%;right:12px;transform:translateY(-50%)}
     .site-header__logout{border:0;background:transparent;font:inherit;text-align:left;cursor:pointer}
     @media(max-width:760px){
       .site-header__links{display:none}
       .site-header__menu-toggle{display:inline-flex;width:42px;height:42px;padding:9px;flex-direction:column;justify-content:center;gap:5px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface);cursor:pointer}
+      .site-header__menu-toggle:hover{background:var(--color-bg)}
       .site-header__menu-toggle span{display:block;width:100%;height:2px;border-radius:99px;background:currentColor}
       .site-header__menu{position:absolute;top:calc(100% + 10px);right:0;width:min(300px,calc(100vw - 24px));display:grid;gap:3px;padding:8px;border:1px solid var(--color-border);border-radius:16px;background:var(--color-surface);box-shadow:var(--shadow-md);z-index:50}
       .site-header__menu[hidden]{display:none}
@@ -57,9 +62,6 @@ export function initHeader(navEl) {
   getCurrentSession().then(render).catch(() => render(null));
 
   onAuthStateChange((event, session) => {
-    // Do not render an intermediate auth state while the initial session
-    // lookup is still resolving. This prevents signed-out controls flashing
-    // before the authenticated navigation appears on refresh.
     if (!resolved) {
       if (event === "INITIAL_SESSION") return;
       return;
@@ -104,12 +106,11 @@ function renderNav(navEl, session) {
   menu.hidden = true;
   menu.setAttribute("role", "menu");
 
-  const menuLinks = [
+  menu.append(
     createLink(page("index.html"), "Home", "site-header__menu-link"),
     createLink(page("shop.html"), "Shop", "site-header__menu-link"),
     createCartLink("site-header__menu-link"),
-  ];
-  menu.append(...menuLinks);
+  );
 
   if (signedIn) {
     menu.append(createLink(page("account.html"), "My Account", "site-header__menu-link"), createLogoutButton());
@@ -160,7 +161,7 @@ function renderNav(navEl, session) {
 }
 
 function createLink(href, text, className = "") { const link = document.createElement("a"); link.href = href; link.textContent = text; if (className) link.className = className; return link; }
-function createCartLink(className = "") { const link = createLink(page("cart.html"), "", className ? `${className} site-header__cart-link` : "site-header__cart-link"); link.setAttribute("aria-label", "Cart"); link.title = "Cart"; link.innerHTML = `${cartIcon()}<span class="site-header__cart-count">${getCartItemCount()}</span>`; return link; }
+function createCartLink(className = "") { const link = createLink(page("cart.html"), "", className ? `${className} site-header__cart-link` : "site-header__cart-link"); link.setAttribute("aria-label", "Cart"); link.title = "Cart"; link.innerHTML = `${cartIcon()}<span class="site-header__cart-label">Cart</span><span class="site-header__cart-count">${getCartItemCount()}</span>`; return link; }
 function createLogoutButton() { const button = document.createElement("button"); button.type = "button"; button.className = "site-header__menu-link site-header__logout"; button.textContent = "Log out"; button.addEventListener("click", async () => { button.disabled = true; try { await signOutCustomer(); window.location.href = page("index.html"); } catch { button.disabled = false; } }); return button; }
 function cartIcon() { return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L20.5 8H6"/><circle cx="10" cy="19" r="1.3"/><circle cx="18" cy="19" r="1.3"/></svg>'; }
 function personIcon() { return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.7-3.3 3-5 6.5-5s5.8 1.7 6.5 5"/></svg>'; }
