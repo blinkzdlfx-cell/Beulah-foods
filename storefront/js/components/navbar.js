@@ -55,8 +55,21 @@ export function initHeader(navEl) {
   };
 
   getCurrentSession().then(render).catch(() => render(null));
-  onAuthStateChange((_event, session) => render(session));
-  onCartChange(() => { if (resolved) renderNav(navEl, lastSession); });
+
+  onAuthStateChange((event, session) => {
+    // Do not render an intermediate auth state while the initial session
+    // lookup is still resolving. This prevents signed-out controls flashing
+    // before the authenticated navigation appears on refresh.
+    if (!resolved) {
+      if (event === "INITIAL_SESSION") return;
+      return;
+    }
+    render(session);
+  });
+
+  onCartChange(() => {
+    if (resolved) renderNav(navEl, lastSession);
+  });
 }
 
 function renderNav(navEl, session) {
@@ -82,14 +95,35 @@ function renderNav(navEl, session) {
   toggle.className = "site-header__menu-toggle";
   toggle.setAttribute("aria-label", "Open menu");
   toggle.setAttribute("aria-expanded", "false");
+  toggle.setAttribute("aria-controls", "site-header-mobile-menu");
   toggle.innerHTML = "<span></span><span></span><span></span>";
 
   const menu = document.createElement("div");
+  menu.id = "site-header-mobile-menu";
   menu.className = "site-header__menu";
   menu.hidden = true;
-  menu.append(createLink(page("index.html"), "Home", "site-header__menu-link"), createLink(page("shop.html"), "Shop", "site-header__menu-link"), createCartLink("site-header__menu-link"));
-  if (signedIn) menu.append(createLink(page("account.html"), "My Account", "site-header__menu-link"), createLogoutButton());
-  else menu.append(createLink(page("login.html"), "Log in", "site-header__menu-link"), createLink(page("signup.html"), "Create account", "btn btn-primary site-header__menu-link"));
+  menu.setAttribute("role", "menu");
+
+  const menuLinks = [
+    createLink(page("index.html"), "Home", "site-header__menu-link"),
+    createLink(page("shop.html"), "Shop", "site-header__menu-link"),
+    createCartLink("site-header__menu-link"),
+  ];
+  menu.append(...menuLinks);
+
+  if (signedIn) {
+    menu.append(createLink(page("account.html"), "My Account", "site-header__menu-link"), createLogoutButton());
+  } else {
+    menu.append(createLink(page("login.html"), "Log in", "site-header__menu-link"), createLink(page("signup.html"), "Create account", "btn btn-primary site-header__menu-link"));
+  }
+
+  menu.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => {
+      menu.hidden = true;
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-label", "Open menu");
+    });
+  });
 
   toggle.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -109,8 +143,19 @@ function renderNav(navEl, session) {
         activeToggle.setAttribute("aria-label", "Open menu");
       }
     });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      const activeToggle = navEl.querySelector(".site-header__menu-toggle");
+      const activeMenu = navEl.querySelector(".site-header__menu");
+      if (activeToggle && activeMenu) {
+        activeMenu.hidden = true;
+        activeToggle.setAttribute("aria-expanded", "false");
+        activeToggle.setAttribute("aria-label", "Open menu");
+      }
+    });
     navEl.dataset.outsideClickBound = "true";
   }
+
   navEl.append(desktopLinks, toggle, menu);
 }
 
