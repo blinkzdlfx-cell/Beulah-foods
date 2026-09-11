@@ -62,8 +62,6 @@ Each admin has an independent Supabase Auth password. A password reset for one a
 - Use Paystack test mode first for the complete E2E test.
 - The application initializes transactions server-side and treats Paystack verification/webhooks as the payment source of truth.
 
-Paystack's documentation recommends webhooks over relying only on browser callbacks; this implementation uses both signed webhooks and a server-side verification endpoint as a recovery path. citeturn0search0turn0search1
-
 ### Resend
 - Resend API key as a Cloudflare Worker secret.
 - Verified sender/domain.
