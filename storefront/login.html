@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="css/components.css" />
   <link rel="stylesheet" href="css/auth.css" />
   <link rel="stylesheet" href="css/auth-refinement.css" />
+  <link rel="stylesheet" href="css/password-toggle.css" />
 </head>
 <body>
   <header class="site-header">
@@ -47,7 +48,7 @@
 
           <div class="form-field">
             <label for="password">Password</label>
-            <input id="password" name="password" type="password" autocomplete="current-password" required />
+            <input id="password" name="password" type="password" autocomplete="current-password" data-password-toggle required />
           </div>
 
           <button type="submit" class="btn btn-primary" id="login-submit">Log in</button>
@@ -60,5 +61,6 @@
   </main>
 
   <script type="module" src="js/pages/login.js"></script>
+  <script type="module" src="js/components/passwordToggle.js"></script>
 </body>
 </html>
