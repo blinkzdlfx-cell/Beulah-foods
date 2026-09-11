@@ -170,9 +170,13 @@ function renderPreview(src) { productPreview.hidden = false; productPreview.inne
 
 // Delivery settings
 async function loadDeliverySettings() {
-  const { data, error } = await supabase.from("delivery_settings").select("id,delivery_fee,free_delivery_threshold,is_active,updated_at").order("updated_at", { ascending: false });
+  const { data, error } = await supabase.from("delivery_settings").select("id,delivery_fee,free_delivery_threshold,is_delivery_enabled,is_free_delivery_enabled,is_active,updated_at").order("updated_at", { ascending: false });
   if (error) throw error;
-  deliveryRows.innerHTML = (data || []).map((item) => `<tr><td>${formatNaira(item.delivery_fee)}</td><td>${formatNaira(item.free_delivery_threshold)}</td><td>${item.is_active ? '<span class="badge">Active</span>' : 'Inactive'}</td><td><button class="btn btn-secondary" data-delivery-edit="${item.id}">Edit</button> <button class="btn btn-secondary" data-delivery-toggle="${item.id}">${item.is_active ? "Deactivate" : "Activate"}</button> <button class="btn btn-secondary" data-delivery-delete="${item.id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="4" class="muted">No delivery settings yet.</td></tr>';
+  deliveryRows.innerHTML = (data || []).map((item) => {
+    const deliveryLabel = item.is_delivery_enabled ? `On · ${formatNaira(item.delivery_fee)}` : "Off";
+    const freeDeliveryLabel = item.is_free_delivery_enabled ? `On · ${formatNaira(item.free_delivery_threshold)} threshold` : "Off";
+    return `<tr><td>${deliveryLabel}</td><td>${freeDeliveryLabel}</td><td>${item.is_active ? '<span class="badge">Active</span>' : 'Inactive'}</td><td><button class="btn btn-secondary" data-delivery-edit="${item.id}">Edit</button> <button class="btn btn-secondary" data-delivery-toggle="${item.id}">${item.is_active ? "Deactivate" : "Activate"}</button> <button class="btn btn-secondary" data-delivery-delete="${item.id}">Delete</button></td></tr>`;
+  }).join("") || '<tr><td colspan="4" class="muted">No delivery settings. Checkout will work without delivery charges.</td></tr>';
   deliveryRows.querySelectorAll("[data-delivery-edit]").forEach((button) => button.addEventListener("click", () => editDelivery(data.find((item) => item.id === button.dataset.deliveryEdit))));
   deliveryRows.querySelectorAll("[data-delivery-toggle]").forEach((button) => button.addEventListener("click", () => toggleDelivery(data.find((item) => item.id === button.dataset.deliveryToggle))));
   deliveryRows.querySelectorAll("[data-delivery-delete]").forEach((button) => button.addEventListener("click", () => deleteDelivery(button.dataset.deliveryDelete)));
@@ -180,18 +184,44 @@ async function loadDeliverySettings() {
 
 deliveryForm.addEventListener("submit", async (event) => {
   event.preventDefault(); clearAlert(appAlert);
-  const id = document.getElementById("delivery-id").value; const active = document.getElementById("delivery-active").checked;
+  const id = document.getElementById("delivery-id").value;
+  const deliveryEnabled = document.getElementById("delivery-enabled").checked;
+  const freeDeliveryEnabled = document.getElementById("free-delivery-enabled").checked;
+  const active = document.getElementById("delivery-active").checked;
+  const feeValue = document.getElementById("delivery-fee").value.trim();
+  const thresholdValue = document.getElementById("delivery-threshold").value.trim();
+
   try {
+    if (freeDeliveryEnabled && !deliveryEnabled) throw new Error("Enable delivery charges before enabling free delivery.");
+    if (deliveryEnabled && feeValue === "") throw new Error("Enter a delivery fee or turn off delivery charges.");
+    if (freeDeliveryEnabled && thresholdValue === "") throw new Error("Enter a free-delivery threshold or turn off the free-delivery option.");
+
     if (active) await deactivateAllDeliverySettings();
-    const payload = { delivery_fee: Number(document.getElementById("delivery-fee").value), free_delivery_threshold: Number(document.getElementById("delivery-threshold").value), is_active: active, updated_at: new Date().toISOString() };
+
+    const payload = {
+      delivery_fee: feeValue === "" ? null : Number(feeValue),
+      free_delivery_threshold: thresholdValue === "" ? null : Number(thresholdValue),
+      is_delivery_enabled: deliveryEnabled,
+      is_free_delivery_enabled: freeDeliveryEnabled,
+      is_active: active,
+      updated_at: new Date().toISOString(),
+    };
     const query = id ? supabase.from("delivery_settings").update(payload).eq("id", id) : supabase.from("delivery_settings").insert(payload);
     const { error } = await query; if (error) throw error;
-    resetDeliveryForm(); await loadDeliverySettings(); showAlert(appAlert, "Delivery setting saved.");
-  } catch (error) { showAlert(appAlert, error.message || "Could not save delivery setting.", true); }
+    resetDeliveryForm(); await loadDeliverySettings(); showAlert(appAlert, "Delivery settings saved.");
+  } catch (error) { showAlert(appAlert, error.message || "Could not save delivery settings.", true); }
 });
 document.getElementById("cancel-delivery").addEventListener("click", resetDeliveryForm);
 async function deactivateAllDeliverySettings() { const { error } = await supabase.from("delivery_settings").update({ is_active: false, updated_at: new Date().toISOString() }).eq("is_active", true); if (error) throw error; }
-function editDelivery(item) { if (!item) return; document.getElementById("delivery-id").value = item.id; document.getElementById("delivery-fee").value = item.delivery_fee; document.getElementById("delivery-threshold").value = item.free_delivery_threshold; document.getElementById("delivery-active").checked = item.is_active; }
+function editDelivery(item) {
+  if (!item) return;
+  document.getElementById("delivery-id").value = item.id;
+  document.getElementById("delivery-fee").value = item.delivery_fee ?? "";
+  document.getElementById("delivery-threshold").value = item.free_delivery_threshold ?? "";
+  document.getElementById("delivery-enabled").checked = Boolean(item.is_delivery_enabled);
+  document.getElementById("free-delivery-enabled").checked = Boolean(item.is_free_delivery_enabled);
+  document.getElementById("delivery-active").checked = Boolean(item.is_active);
+}
 function resetDeliveryForm() { deliveryForm.reset(); document.getElementById("delivery-id").value = ""; }
 async function toggleDelivery(item) { if (!item) return; try { if (!item.is_active) await deactivateAllDeliverySettings(); const { error } = await supabase.from("delivery_settings").update({ is_active: !item.is_active, updated_at: new Date().toISOString() }).eq("id", item.id); if (error) throw error; await loadDeliverySettings(); } catch (error) { showAlert(appAlert, error.message, true); } }
 async function deleteDelivery(id) { if (!confirm("Delete this delivery setting?")) return; const { error } = await supabase.from("delivery_settings").delete().eq("id", id); if (error) showAlert(appAlert, error.message, true); else await loadDeliverySettings(); }
