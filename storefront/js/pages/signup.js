@@ -36,6 +36,7 @@ form.addEventListener("submit", async (event) => {
 
   try {
     const data = await signUpCustomer({ fullName, email, password });
+    window.localStorage.setItem("beulah:new-account-welcome", "1");
 
     if (data.session) {
       showFinishedState(
