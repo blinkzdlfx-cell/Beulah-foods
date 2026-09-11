@@ -64,8 +64,9 @@ declare
   item jsonb;
   product_row record;
   requested_quantity integer;
-  subtotal numeric(12,2) := 0;
+  v_subtotal numeric(12,2) := 0;
   item_total numeric(12,2);
+  v_expires_at timestamptz;
 begin
   if customer is null then raise exception 'AUTH_REQUIRED'; end if;
   if nullif(trim(delivery_name), '') is null or nullif(trim(delivery_phone), '') is null or nullif(trim(delivery_address), '') is null then
@@ -92,7 +93,7 @@ begin
     if product_row.stock_quantity < requested_quantity then raise exception 'INSUFFICIENT_STOCK:%', product_row.name; end if;
 
     item_total := round(product_row.price * requested_quantity, 2);
-    subtotal := subtotal + item_total;
+    v_subtotal := v_subtotal + item_total;
 
     insert into public.order_items (order_id, product_id, product_name, unit_price, quantity, line_total)
     values (order_id, product_row.id, product_row.name, product_row.price, requested_quantity, item_total);
@@ -106,17 +107,18 @@ begin
 
   -- Fees remain zero until explicit store fee rules are approved/configured.
   update public.orders
-  set subtotal = subtotal, fees = 0, total = subtotal, updated_at = now()
+  set subtotal = v_subtotal, fees = 0, total = v_subtotal, updated_at = now()
   where id = order_id;
 
+  v_expires_at := now() + interval '15 minutes';
   insert into public.reservations (order_id, status, expires_at)
-  values (order_id, 'active', now() + interval '15 minutes')
+  values (order_id, 'active', v_expires_at)
   returning id into reservation_id;
 
   insert into public.payments (order_id, status, amount)
-  values (order_id, 'pending', subtotal);
+  values (order_id, 'pending', v_subtotal);
 
-  return jsonb_build_object('order_id', order_id, 'reservation_id', reservation_id, 'subtotal', subtotal, 'fees', 0, 'total', subtotal, 'expires_at', now() + interval '15 minutes');
+  return jsonb_build_object('order_id', order_id, 'reservation_id', reservation_id, 'subtotal', v_subtotal, 'fees', 0, 'total', v_subtotal, 'expires_at', v_expires_at);
 exception when others then
   if order_id is not null then
     delete from public.orders where id = order_id;
