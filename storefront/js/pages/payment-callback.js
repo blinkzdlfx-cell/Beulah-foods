@@ -6,15 +6,31 @@ const message = document.getElementById("payment-message");
 const status = document.getElementById("payment-status");
 const reference = new URLSearchParams(window.location.search).get("reference");
 
-function show(text, type = "") { status.textContent = text; status.className = `alert${type ? ` alert-${type}` : ""}`; }
+function show(text, type = "") {
+  status.textContent = text;
+  status.className = `alert${type ? ` alert-${type}` : ""}`;
+}
 
 async function init() {
-  if (!reference) { title.textContent = "Payment reference missing"; message.textContent = "We could not verify this payment."; show("No payment reference was supplied.", "error"); return; }
+  if (!reference) {
+    title.textContent = "Payment reference missing";
+    message.textContent = "We could not verify this payment.";
+    show("No payment reference was supplied.", "error");
+    return;
+  }
+
   const session = await getCurrentSession();
-  if (!session?.access_token) { title.textContent = "Sign in required"; message.textContent = "Sign in to verify and view this order."; show("Please sign in, then open your orders.", "error"); return; }
+  if (!session?.access_token) {
+    title.textContent = "Sign in required";
+    message.textContent = "Sign in to verify and view this order.";
+    show("Please sign in, then open your orders.", "error");
+    return;
+  }
 
   try {
-    const response = await fetch(`/api/paystack/verify?reference=${encodeURIComponent(reference)}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
+    const response = await fetch(`/api/paystack/verify?reference=${encodeURIComponent(reference)}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data?.error || "PAYMENT_VERIFICATION_FAILED");
 
@@ -27,9 +43,16 @@ async function init() {
       return;
     }
 
+    if (data.payment_status === "failed") {
+      title.textContent = "Payment not completed";
+      message.textContent = "Paystack reported that this payment attempt failed. You can return to your orders and try again if the order is still reserved.";
+      show("Payment was not confirmed.", "error");
+      return;
+    }
+
     title.textContent = "Payment not completed";
-    message.textContent = "The payment provider did not report a successful payment. Your reservation has been released when applicable.";
-    show("Payment was not confirmed.", "error");
+    message.textContent = "This payment attempt was not completed. Your order can still be retried while its reservation is active.";
+    show("Your payment was not completed. You can retry from My Orders.");
   } catch (error) {
     console.error(error);
     title.textContent = "Payment status unavailable";
