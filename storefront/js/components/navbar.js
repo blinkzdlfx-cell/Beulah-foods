@@ -21,8 +21,16 @@ function ensureStyles() {
     .site-header__links a:hover, .site-header__links button:hover { background:var(--color-surface-subtle); color:var(--color-text); }
     .site-header__links .site-header__logout { border:0; background:transparent; font:inherit; cursor:pointer; text-align:left; }
     .site-header__cart-link { position:relative; display:inline-flex; align-items:center; gap:7px; }
-    .site-header__cart-link svg,.site-header__account-icon svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+    .site-header__cart-link svg,.site-header__account-button svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
     .site-header__cart-count { min-width:18px; height:18px; padding:0 4px; display:grid; place-items:center; border-radius:999px; background:var(--color-accent); color:var(--color-accent-ink); font-size:.68rem; font-weight:800; }
+    .site-header__account { position:relative; }
+    .site-header__account-button { display:inline-flex !important; align-items:center; gap:7px; border:1px solid transparent; background:transparent; cursor:pointer; }
+    .site-header__account-button[aria-expanded="true"] { border-color:var(--color-border); background:var(--color-surface-subtle); color:var(--color-text); }
+    .site-header__account-menu { position:absolute; top:calc(100% + 10px); right:0; width:220px; display:grid; gap:3px; padding:8px; border:1px solid var(--color-border); border-radius:12px; background:var(--color-surface); box-shadow:var(--shadow-md); z-index:110; }
+    .site-header__account-menu[hidden] { display:none !important; }
+    .site-header__account-menu > a, .site-header__account-menu > button { display:flex; width:100%; min-height:44px; align-items:center; padding:10px 12px; border-radius:8px; color:var(--color-text) !important; text-decoration:none; }
+    .site-header__account-menu > a:hover, .site-header__account-menu > a:focus-visible, .site-header__account-menu > button:hover, .site-header__account-menu > button:focus-visible { background:var(--color-accent-soft) !important; color:var(--color-accent-dark) !important; }
+    .site-header__account-divider { height:1px; margin:5px 4px; background:var(--color-border); }
     .site-header__menu-toggle { display:none; width:42px; height:42px; padding:9px; flex-direction:column; justify-content:center; gap:5px; border:1px solid var(--color-border); border-radius:10px; background:var(--color-surface); color:var(--color-text); cursor:pointer; }
     .site-header__menu-toggle:hover { border-color:var(--color-accent); background:var(--color-bg); }
     .site-header__menu-toggle span { display:block; width:100%; height:2px; border-radius:99px; background:currentColor; }
@@ -45,7 +53,7 @@ function ensureStyles() {
     .logout-modal__actions { display:flex; justify-content:flex-end; gap:8px; margin-top:22px; }
     .logout-modal__actions .btn { min-width:90px; }
     @media(max-width:760px) {
-      .site-header__links { display:none; }
+      .site-header__links, .site-header__account { display:none; }
       .site-header__menu-toggle { display:inline-flex; }
       .site-header__inner { position:relative; }
       .logout-modal { padding:16px; }
@@ -103,10 +111,7 @@ function renderNav(navEl, session) {
   );
 
   if (signedIn) {
-    desktopLinks.append(
-      createLink(page("account.html"), "My Account"),
-      createLogoutButton(),
-    );
+    desktopLinks.append(createAccountMenu());
   } else {
     desktopLinks.append(
       createLink(page("login.html"), "Log in"),
@@ -135,7 +140,10 @@ function renderNav(navEl, session) {
   );
 
   if (signedIn) {
-    menu.append(createLink(page("account.html"), "My Account", "site-header__menu-link"));
+    menu.append(
+      createLink(page("account.html"), "My Account", "site-header__menu-link"),
+      createLink(page("orders.html"), "My Orders", "site-header__menu-link"),
+    );
     const divider = document.createElement("div");
     divider.className = "site-header__menu-divider";
     divider.setAttribute("aria-hidden", "true");
@@ -163,20 +171,69 @@ function renderNav(navEl, session) {
     document.addEventListener("click", (event) => {
       const activeToggle = navEl.querySelector(".site-header__menu-toggle");
       const activeMenu = navEl.querySelector(".site-header__menu");
+      const accountMenu = navEl.querySelector(".site-header__account-menu");
+      const accountButton = navEl.querySelector(".site-header__account-button");
       if (activeToggle && activeMenu && !navEl.contains(event.target)) closeMenu(activeToggle, activeMenu);
+      if (accountMenu && accountButton && !navEl.contains(event.target)) closeAccountMenu(accountButton, accountMenu);
     });
 
     document.addEventListener("keydown", (event) => {
       if (event.key !== "Escape") return;
       const activeToggle = navEl.querySelector(".site-header__menu-toggle");
       const activeMenu = navEl.querySelector(".site-header__menu");
+      const accountMenu = navEl.querySelector(".site-header__account-menu");
+      const accountButton = navEl.querySelector(".site-header__account-button");
       if (activeToggle && activeMenu) closeMenu(activeToggle, activeMenu);
+      if (accountMenu && accountButton) closeAccountMenu(accountButton, accountMenu);
     });
 
     navEl.dataset.outsideClickBound = "true";
   }
 
   navEl.append(desktopLinks, toggle, menu);
+}
+
+function createAccountMenu() {
+  const wrapper = document.createElement("div");
+  wrapper.className = "site-header__account";
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "site-header__account-button";
+  button.setAttribute("aria-expanded", "false");
+  button.setAttribute("aria-label", "Open account menu");
+  button.innerHTML = `${accountIcon()}<span>Account</span>`;
+
+  const menu = document.createElement("div");
+  menu.className = "site-header__account-menu";
+  menu.hidden = true;
+  menu.setAttribute("role", "menu");
+  menu.append(
+    createLink(page("account.html"), "My Account"),
+    createLink(page("orders.html"), "My Orders"),
+  );
+
+  const divider = document.createElement("div");
+  divider.className = "site-header__account-divider";
+  divider.setAttribute("aria-hidden", "true");
+  menu.append(divider, createLogoutButton());
+
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const open = menu.hidden;
+    menu.hidden = !open;
+    button.setAttribute("aria-expanded", String(open));
+    button.setAttribute("aria-label", open ? "Close account menu" : "Open account menu");
+  });
+
+  wrapper.append(button, menu);
+  return wrapper;
+}
+
+function closeAccountMenu(button, menu) {
+  menu.hidden = true;
+  button.setAttribute("aria-expanded", "false");
+  button.setAttribute("aria-label", "Open account menu");
 }
 
 function closeMenu(toggle, menu) {
@@ -267,4 +324,8 @@ function openLogoutModal() {
 
 function cartIcon() {
   return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L20.5 8H6"/><circle cx="10" cy="19" r="1.3"/><circle cx="18" cy="19" r="1.3"/></svg>';
+}
+
+function accountIcon() {
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.1 3.1-4.8 6.5-4.8s5.7 1.7 6.5 4.8"/></svg>';
 }
