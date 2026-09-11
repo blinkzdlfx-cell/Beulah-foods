@@ -28,8 +28,6 @@ export default {
       return handlePaystackWebhook(request, env);
     }
 
-    // The storefront root is a valid asset path used by direct visits and
-    // should be served, not redirected to / (which would redirect back here).
     if (url.pathname === "/storefront/" || url.pathname === "/storefront/index.html") {
       const storefrontUrl = new URL(request.url);
       storefrontUrl.pathname = "/storefront/index.html";
@@ -49,9 +47,6 @@ export default {
       return env.ASSETS.fetch(new Request(storefrontUrl, request));
     }
 
-    // Keep the admin dashboard available at its directory URL while assets
-    // remain under /admin/. html_handling is disabled, so /admin/ needs an
-    // explicit mapping to /admin/index.html.
     if (url.pathname === "/admin") {
       const canonical = new URL(request.url);
       canonical.pathname = "/admin/";
@@ -64,8 +59,6 @@ export default {
       return env.ASSETS.fetch(new Request(adminUrl, request));
     }
 
-    // Support both /login and /login.html style public URLs. This keeps
-    // manually entered/bookmarked clean URLs from falling through to 404.
     const cleanPath = url.pathname.replace(/^\//, "");
     if (STOREFRONT_PAGES.has(cleanPath)) {
       const storefrontUrl = new URL(request.url);
@@ -103,6 +96,10 @@ async function handlePaystackInitialize(request, env, url) {
   if (!order) return json({ error: "ORDER_NOT_FOUND" }, 404);
   if (order.payment_status !== "pending" || order.status !== "pending_payment") return json({ error: "ORDER_NOT_PAYABLE" }, 409);
 
+  const reservationResult = await supabaseRest(env, `/rest/v1/reservations?order_id=eq.${encodeURIComponent(orderId)}&status=eq.active&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&select=id,expires_at&limit=1`);
+  const reservation = reservationResult.data?.[0];
+  if (!reservation) return json({ error: "ORDER_RESERVATION_EXPIRED" }, 409);
+
   const paymentResult = await supabaseRest(env, `/rest/v1/payments?order_id=eq.${encodeURIComponent(orderId)}&provider=eq.paystack&select=id,amount,status,provider_reference&limit=1`);
   const payment = paymentResult.data?.[0];
   if (!payment || payment.status !== "pending") return json({ error: "PAYMENT_NOT_AVAILABLE" }, 409);
@@ -133,7 +130,7 @@ async function handlePaystackInitialize(request, env, url) {
     body: JSON.stringify({ provider_reference: paystack.data.reference, raw_response: paystack.data, updated_at: new Date().toISOString() }),
   });
 
-  return json({ authorization_url: paystack.data.authorization_url, reference: paystack.data.reference, access_code: paystack.data.access_code });
+  return json({ authorization_url: paystack.data.authorization_url, reference: paystack.data.reference, access_code: paystack.data.access_code, reservation_expires_at: reservation.expires_at });
 }
 
 async function handlePaystackVerify(request, env, url) {
@@ -159,12 +156,27 @@ async function handlePaystackVerify(request, env, url) {
   if (!verifyResponse.ok || !verified?.status) return json({ error: "PAYMENT_VERIFICATION_FAILED" }, 502);
 
   const transaction = verified.data;
-  const status = transaction?.status === "success" ? "success" : "failed";
+  const providerStatus = String(transaction?.status || "").toLowerCase();
   const amountKobo = Number(transaction?.amount);
   if (!Number.isFinite(amountKobo)) return json({ error: "PAYMENT_AMOUNT_INVALID" }, 502);
-  const result = await finalizePayment(env, reference, status, amountKobo, verified, transaction?.paid_at || null);
-  if (status === "success") await sendOrderEmails(env, order.id, reference);
-  return json({ ...result, provider_status: transaction?.status, order_id: order.id });
+
+  if (providerStatus === "success") {
+    const result = await finalizePayment(env, reference, "success", amountKobo, verified, transaction?.paid_at || null);
+    await sendOrderEmails(env, order.id, reference);
+    return json({ ...result, provider_status: providerStatus, order_id: order.id });
+  }
+
+  if (providerStatus === "failed") {
+    const result = await finalizePayment(env, reference, "failed", amountKobo, verified, transaction?.paid_at || null);
+    return json({ ...result, provider_status: providerStatus, order_id: order.id });
+  }
+
+  return json({
+    order_id: order.id,
+    payment_status: "pending",
+    provider_status: providerStatus || "pending",
+    message: "Payment has not been completed. Your order reservation remains active while time is available.",
+  });
 }
 
 async function handlePaystackWebhook(request, env) {
@@ -258,7 +270,7 @@ async function verifyHmacSha512(payload, secret, expectedHex) {
 
 function timingSafeEqual(a, b) { let result = a.length ^ b.length; const length = Math.max(a.length, b.length); for (let i = 0; i < length; i += 1) result |= (a.charCodeAt(i % a.length) || 0) ^ (b.charCodeAt(i % b.length) || 0); return result === 0; }
 function getBearerToken(request) { const value = request.headers.get("authorization") || ""; return value.startsWith("Bearer ") ? value.slice(7).trim() : ""; }
+function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS }); }
 async function safeJson(response) { try { return await response.json(); } catch { return null; } }
-function json(body, status = 200) { return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS }); }
-function formatNaira(value) { return `₦${Number(value || 0).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
+function formatNaira(value) { return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 }).format(Number(value) || 0); }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character])); }
