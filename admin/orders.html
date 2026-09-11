@@ -1,1 +1,34 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Orders — Beulah Foods Admin</title><link rel="stylesheet" href="css/variables.css"><link rel="stylesheet" href="css/admin.css"></head><body><header class="admin-header"><div class="admin-header__inner"><div class="admin-brand">Beulah <span>Foods</span> Admin</div><a class="btn btn-secondary" href="/admin/">Dashboard</a></div></header><main class="admin-main"><section class="admin-card"><h1>Orders</h1><p class="muted">Operational order view. Payment status remains database-controlled.</p><div id="status" class="alert" hidden></div><div class="table-wrap"><table class="table"><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Payment</th><th>Status</th><th>Created</th></tr></thead><tbody id="rows"></tbody></table></div></section></main><script type="module" src="js/orders.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Orders — Beulah Foods Admin</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <header class="admin-header">
+    <div class="admin-header__inner">
+      <div class="admin-brand">Beulah <span>Foods</span> Admin</div>
+      <a class="btn btn-secondary" href="/admin/">Dashboard</a>
+    </div>
+  </header>
+  <main class="admin-main">
+    <section class="admin-card">
+      <h1>Orders</h1>
+      <p class="muted">Operational order view. Payment status remains controlled by the trusted payment path.</p>
+      <div id="status" class="alert" hidden></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>Order</th><th>Customer</th><th>Total</th><th>Payment</th><th>Status</th><th>Created</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="js/orders.js"></script>
+</body>
+</html>
