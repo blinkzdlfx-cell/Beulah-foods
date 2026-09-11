@@ -8,12 +8,14 @@ const ctaTitle = document.getElementById("cta-title");
 const ctaCopy = document.getElementById("cta-copy");
 const ctaPrimaryAction = document.getElementById("cta-primary-action");
 const ctaSecondaryAction = document.getElementById("cta-secondary-action");
+let welcomeShown = false;
 
 function updateAuthenticatedContent(session) {
   const signedIn = Boolean(session?.user);
-  const isNewAccount = signedIn && window.localStorage.getItem("beulah:new-account-welcome") === "1";
+  const isNewAccount = signedIn && !welcomeShown && window.localStorage.getItem("beulah:new-account-welcome") === "1";
 
   if (isNewAccount) {
+    welcomeShown = true;
     window.localStorage.removeItem("beulah:new-account-welcome");
   }
 
