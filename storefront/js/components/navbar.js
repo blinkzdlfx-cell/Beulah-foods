@@ -1,6 +1,3 @@
-// Shared site header. Keeps customer navigation in sync with Supabase auth.
-// Authenticated customers see account actions instead of Login/Signup.
-
 import {
   getCurrentSession,
   onAuthStateChange,
@@ -23,42 +20,77 @@ function renderNav(navEl, session) {
   navEl.textContent = "";
   navEl.hidden = false;
 
-  if (session?.user) {
-    const homeLink = document.createElement("a");
-    homeLink.href = "index.html";
-    homeLink.textContent = "Home";
+  const signedIn = Boolean(session?.user);
 
-    const accountLink = document.createElement("a");
-    accountLink.href = "account.html";
-    accountLink.textContent = "My account";
-    accountLink.className = "site-header__account-link";
+  const desktopLinks = document.createElement("div");
+  desktopLinks.className = "site-header__links";
 
-    const logoutBtn = document.createElement("button");
-    logoutBtn.type = "button";
-    logoutBtn.className = "btn btn-secondary site-header__logout";
-    logoutBtn.textContent = "Log out";
-    logoutBtn.addEventListener("click", async () => {
-      logoutBtn.disabled = true;
-      try {
-        await signOutCustomer();
-        window.location.href = "index.html";
-      } catch {
-        logoutBtn.disabled = false;
-      }
-    });
+  const homeLink = createLink("index.html", "Home");
+  const shopLink = createLink("shop.html", "Shop");
+  desktopLinks.append(homeLink, shopLink);
 
-    navEl.append(homeLink, accountLink, logoutBtn);
-    return;
+  const menuToggle = document.createElement("button");
+  menuToggle.type = "button";
+  menuToggle.className = "site-header__menu-toggle";
+  menuToggle.setAttribute("aria-label", "Open menu");
+  menuToggle.setAttribute("aria-expanded", "false");
+  menuToggle.innerHTML = "<span></span><span></span><span></span>";
+
+  const menu = document.createElement("div");
+  menu.className = "site-header__menu";
+  menu.hidden = true;
+
+  if (signedIn) {
+    menu.append(
+      createLink("account.html", "My account", "site-header__menu-link"),
+      createLogoutButton(),
+    );
+  } else {
+    menu.append(
+      createLink("login.html", "Log in", "site-header__menu-link"),
+      createLink("signup.html", "Create account", "btn btn-primary site-header__menu-link"),
+    );
   }
 
-  const loginLink = document.createElement("a");
-  loginLink.href = "login.html";
-  loginLink.textContent = "Log in";
+  menuToggle.addEventListener("click", () => {
+    const isOpen = !menu.hidden;
+    menu.hidden = isOpen;
+    menuToggle.setAttribute("aria-expanded", String(!isOpen));
+    menuToggle.setAttribute("aria-label", isOpen ? "Open menu" : "Close menu");
+  });
 
-  const signupLink = document.createElement("a");
-  signupLink.href = "signup.html";
-  signupLink.className = "btn btn-primary";
-  signupLink.textContent = "Create account";
+  document.addEventListener("click", (event) => {
+    if (!navEl.contains(event.target)) {
+      menu.hidden = true;
+      menuToggle.setAttribute("aria-expanded", "false");
+      menuToggle.setAttribute("aria-label", "Open menu");
+    }
+  });
 
-  navEl.append(loginLink, signupLink);
+  navEl.append(desktopLinks, menuToggle, menu);
+}
+
+function createLink(href, text, className = "") {
+  const link = document.createElement("a");
+  link.href = href;
+  link.textContent = text;
+  if (className) link.className = className;
+  return link;
+}
+
+function createLogoutButton() {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "site-header__menu-link site-header__logout";
+  button.textContent = "Log out";
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    try {
+      await signOutCustomer();
+      window.location.href = "index.html";
+    } catch {
+      button.disabled = false;
+    }
+  });
+  return button;
 }
