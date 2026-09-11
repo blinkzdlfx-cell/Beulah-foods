@@ -3,22 +3,118 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Beulah Foods — Eat Healthy, Live Healthy." />
   <base href="/storefront/" />
-  <title>Beulah Foods</title>
+  <title>Beulah Foods — Eat Healthy, Live Healthy</title>
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/home.css" />
 </head>
 <body>
   <header class="site-header">
-    <a class="site-header__logo" href="index.html">Beulah Foods</a>
-    <nav id="site-header-nav" class="site-header__nav" hidden></nav>
+    <div class="site-header__inner">
+      <a class="site-header__logo-wrap" href="index.html" aria-label="Beulah Foods home">
+        <span class="site-header__mark" aria-hidden="true">B</span>
+        <span class="site-header__brand">Beulah Foods</span>
+      </a>
+      <nav id="site-header-nav" class="site-header__nav" aria-label="Main navigation" hidden></nav>
+    </div>
   </header>
 
-  <main style="padding: var(--space-4);">
-    <h1>Beulah Foods</h1>
-    <p>Storefront scaffold — shopping features not built yet. See FEATURES.md.</p>
+  <main>
+    <section class="hero">
+      <div class="hero__grid">
+        <div>
+          <p class="eyebrow">Beulah Foods</p>
+          <h1>Eat healthy.<br /><span>Live healthy.</span></h1>
+          <p class="hero__copy">
+            A simpler way to discover and order the foods you want for everyday living.
+            Beulah Foods brings the store experience online with a clean, dependable shopping journey.
+          </p>
+          <div class="hero__actions">
+            <a class="btn btn-primary" href="#experience">Explore Beulah Foods</a>
+            <a class="btn btn-secondary" href="signup.html">Create an account</a>
+          </div>
+        </div>
+
+        <div class="hero__visual" aria-hidden="true">
+          <div class="hero-card">
+            <div class="hero-card__content">
+              <span class="hero-card__label">Food for everyday living</span>
+              <p class="hero-card__title">Good food starts with a thoughtful choice.</p>
+              <p class="hero-card__note">Your Beulah Foods shopping experience is being built around clarity, convenience and trust.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--soft" id="experience">
+      <div class="section__inner">
+        <div class="section__heading">
+          <p class="eyebrow">The experience</p>
+          <h2>Everything should feel simple from the first visit.</h2>
+          <p>
+            The new Beulah Foods storefront is being designed as a complete shopping experience,
+            not a collection of disconnected pages.
+          </p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card">
+            <div class="feature-card__number">01</div>
+            <h3>Discover</h3>
+            <p>Browse the real Beulah Foods catalogue as products and categories become available online.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-card__number">02</div>
+            <h3>Choose</h3>
+            <p>View clear product information, pricing and availability before adding anything to your cart.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-card__number">03</div>
+            <h3>Order</h3>
+            <p>Move from cart to checkout through a structured, secure flow built for real orders and payments.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section__inner story">
+        <p class="story__statement">A food brand should be easy to understand and easy to shop.</p>
+        <p class="story__copy">
+          This foundation keeps the customer journey focused while leaving room for the catalogue,
+          account area, checkout, orders and other services to grow without redesigning the entire storefront.
+          Product information and business data will come from the real Beulah Foods backend as those systems are connected.
+        </p>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="section__inner">
+        <div class="cta__box">
+          <h2>Be ready for the full Beulah Foods experience.</h2>
+          <p>Customer accounts are already connected. The storefront foundation is now ready for the real catalogue and shopping flow.</p>
+          <div class="cta__actions">
+            <a class="btn btn-light" href="signup.html">Create an account</a>
+            <a class="btn btn-secondary" href="login.html">Log in</a>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
+
+  <footer class="site-footer">
+    <div class="footer__inner">
+      <div>
+        <div class="footer__brand">Beulah Foods</div>
+        <p class="footer__copy">Eat Healthy, Live Healthy.</p>
+      </div>
+      <p class="footer__copy">© <span id="footer-year"></span> Beulah Foods</p>
+    </div>
+  </footer>
 
   <script type="module" src="js/pages/home.js"></script>
 </body>
