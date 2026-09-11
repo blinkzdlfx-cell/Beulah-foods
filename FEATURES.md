@@ -1,15 +1,15 @@
 # FEATURES.md — Beulah Foods
 
-Status legend: ⬜ not started · 🟨 in progress · ✅ implemented
+Status legend: ⬜ not started · 🟨 in progress / configuration pending · ✅ implemented
 
-This file reflects the current repository state. Live-provider features remain in progress until the relevant service is configured and end-to-end tested.
+Live-provider items remain 🟨 until production secrets and end-to-end tests are complete.
 
 ## Customer — Authentication
 - ✅ Sign up / email confirmation flow
 - ✅ Sign in / log in
 - ✅ Log out
-- 🟨 Forgot password
-- 🟨 Reset password
+- ✅ Forgot password
+- ✅ Reset password
 - ✅ Maintain authenticated session
 
 ## Customer — Account
@@ -20,32 +20,34 @@ This file reflects the current repository state. Live-provider features remain i
 
 ## Customer — Shopping
 - ✅ Browse live products
+- ✅ Server-side product pagination
 - ✅ View product details
 - ✅ Add products to cart
 - ✅ Change quantities
 - ✅ Remove products
 - ✅ View cart
-- 🟨 Proceed to trusted checkout
+- ✅ Proceed to trusted checkout
 
 ## Customer — Checkout
 - ✅ Review products and quantities
 - ✅ Review live subtotal
-- 🟨 Review applicable fees — fee rules not yet approved/configured
-- ⬜ Apply promo code
-- ⬜ Review discount
-- 🟨 Review final payable amount — currently provider-neutral subtotal only until fee/discount rules exist
-- 🟨 Confirm checkout — creates a trusted pending order and 15-minute reservation; payment is not initialized
+- ✅ Review database-controlled delivery fee/free-delivery rule
+- ✅ Enter promo code
+- ✅ Review database-calculated discount
+- ✅ Review final payable amount
+- ✅ Create trusted pending order and 15-minute reservation
+- 🟨 Complete Paystack payment — provider secrets/configuration pending
 
 ## Customer — Orders / Payment
-- 🟨 Create a 15-minute reservation before payment
-- ⬜ Initialize payment
-- ⬜ Complete payment through selected provider — provider not yet chosen
-- ⬜ Verify payment server-side
-- 🟨 Handle pending payment
-- ⬜ Handle successful payment
-- ⬜ Handle failed payment
-- ⬜ Show final payment result screen
-- 🟨 Create pending order through trusted RPC; final paid/confirmed transition remains provider-dependent
+- ✅ Create a 15-minute reservation before payment
+- 🟨 Initialize Paystack payment — implementation complete; production key/config pending
+- 🟨 Complete payment through Paystack — live/test configuration pending
+- 🟨 Verify payment server-side — implementation complete; live test pending
+- ✅ Handle pending payment
+- 🟨 Handle successful payment — implementation complete; live test pending
+- 🟨 Handle failed payment — implementation complete; live test pending
+- 🟨 Show final payment result screen — implementation complete; live test pending
+- ✅ Trusted pending-order creation
 - ✅ View own orders
 - ✅ View individual order details
 
@@ -59,9 +61,9 @@ This file reflects the current repository state. Live-provider features remain i
 - ⬜ Recent activity
 
 ## Admin — Authorization
-- 🟨 Explicit `admin_users` authorization table and database `is_admin()` helper
-- 🟨 Trusted-only admin provisioning boundary
-- 🟨 Admin login authorization check
+- ✅ Explicit `admin_users` authorization table and database `is_admin()` helper
+- ✅ Trusted-only admin provisioning boundary
+- ✅ Admin login authorization check
 
 ## Admin — Products
 - ✅ Add product
@@ -70,6 +72,9 @@ This file reflects the current repository state. Live-provider features remain i
 - ✅ Reactivate product
 - 🟨 Delete product — UI deletion remains intentionally conservative until historical deletion policy is finalized
 - ✅ Manage product information / pricing / availability
+- ✅ Upload product images to Supabase Storage
+- ✅ Replace product images
+- ✅ Paginated product management
 
 ## Admin — Categories
 - ✅ Create
@@ -87,16 +92,18 @@ This file reflects the current repository state. Live-provider features remain i
 - ⬜ Search / filter orders
 - ⬜ View individual admin order detail
 - 🟨 View customer identity reference
-- ⬜ Full delivery information view
-- ⬜ Full order-item detail view
+- 🟨 Full delivery information view
+- 🟨 Full order-item detail view
 - 🟨 View payment status
 - ✅ Manage operational order status through trusted database function
+- ✅ Paginated order list
 
 ## Admin — Payments / Transactions
 - 🟨 View payment records
 - 🟨 View transaction/provider references
 - 🟨 View payment status
 - 🟨 Associate payments with orders through database relationship
+- ✅ Paginated transaction list
 
 ## Admin — Customers
 - ⬜ View customers
@@ -104,26 +111,20 @@ This file reflects the current repository state. Live-provider features remain i
 - ⬜ View customer orders
 
 ## Admin — Promo Codes
-- ⬜ Create
-- ⬜ Edit
-- ⬜ Enable / disable
-- ⬜ Configure discount rules
-
-## Admin — Announcements
-- ⬜ Create
-- ⬜ Edit
-- ⬜ Publish / unpublish
-
-## Admin — Testimonials
-- ⬜ Manage testimonials
-- ⬜ Publish / unpublish
+- ✅ Create
+- ✅ Edit
+- ✅ Enable / disable
+- ✅ Configure V1 discount rules
+- 🟨 Production testing of limits and expiry
 
 ## Admin — Settings
-- ⬜ Manage approved store configuration
+- 🟨 Delivery fee and free-delivery threshold management
+- ⬜ Other store configuration
 
 ## Infrastructure / Integration
-- 🟨 Trusted provider-neutral checkout boundary
-- ⬜ Payment provider integration
-- ⬜ Server-side payment verification
-- ⬜ Resend transactional email
-- 🟨 Clean public storefront routes
+- ✅ Trusted checkout boundary
+- 🟨 Paystack integration — configuration/live testing pending
+- 🟨 Server-side payment verification/webhook — configuration/live testing pending
+- 🟨 Resend transactional email — API/domain configuration and live testing pending
+- 🟨 Automatic reservation cleanup — migration includes `pg_cron` schedule; production confirmation pending
+- ✅ Clean public storefront routes
