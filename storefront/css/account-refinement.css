@@ -67,15 +67,45 @@
   line-height: 1.45;
 }
 
-.account-summary__link {
-  display: inline-flex;
-  margin-top: 24px;
-  padding-top: 16px;
-  width: 100%;
+.account-summary__links {
+  display: grid;
+  gap: 6px;
+  margin-top: 22px;
+  padding-top: 10px;
   border-top: 1px solid var(--color-border);
-  color: #278a61;
+}
+
+.account-summary__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin: 0;
+  padding: 11px 10px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-text-muted);
   font-size: .9rem;
   font-weight: 700;
+  text-decoration: none;
+}
+
+.account-summary__link:hover,
+.account-summary__link:focus-visible {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-dark);
+}
+
+.account-summary__link--active {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-dark);
+}
+
+.account-summary__link--secondary {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0 0 8px 8px;
 }
 
 .account-form-card {
@@ -88,7 +118,6 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* Deliberately no decorative green stripe or pseudo-element. */
 .account-form-card::before,
 .account-form-card::after,
 .account-summary::before,
@@ -204,7 +233,8 @@
   .account-layout { grid-template-columns: 1fr; gap: 14px; }
   .account-summary { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 16px; padding: 20px; }
   .account-avatar { margin: 0; }
-  .account-summary__link { grid-column: 1 / -1; margin-top: 4px; padding-top: 15px; }
+  .account-summary__links { grid-column: 1 / -1; margin-top: 4px; padding-top: 12px; }
+  .account-summary__link--secondary { grid-column: 1 / -1; margin-top: 0; }
   .account-view { grid-template-columns: 1fr; }
   .account-detail--address { grid-column: auto; }
 }
