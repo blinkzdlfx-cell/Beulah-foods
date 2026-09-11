@@ -31,7 +31,7 @@ create table if not exists public.reservations (
   id uuid primary key default gen_random_uuid(),
   order_id uuid not null unique references public.orders(id) on delete cascade,
   status text not null default 'active' check (status in ('active','expired','confirmed')),
-  expires_at timestamptz not null,
+  expires_at timestamptz not null default (now() + interval '15 minutes'),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
