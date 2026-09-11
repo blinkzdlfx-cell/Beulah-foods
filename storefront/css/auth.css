@@ -71,6 +71,10 @@
   padding: clamp(28px, 5vw, 56px);
 }
 
+.auth-page > .auth-card {
+  width: min(520px, 100%);
+}
+
 .auth-card h2 {
   margin: 0;
   font-family: var(--font-display);
