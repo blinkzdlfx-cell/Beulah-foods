@@ -28,13 +28,12 @@ export default {
       return handlePaystackWebhook(request, env);
     }
 
-    // Canonical public storefront URL is the site root. Legacy/internal
-    // storefront HTML paths are redirected so relative links cannot leave
-    // users stranded under /storefront/.
+    // The storefront root is a valid asset path used by direct visits and
+    // should be served, not redirected to / (which would redirect back here).
     if (url.pathname === "/storefront/" || url.pathname === "/storefront/index.html") {
-      const canonical = new URL(request.url);
-      canonical.pathname = "/";
-      return Response.redirect(canonical, 301);
+      const storefrontUrl = new URL(request.url);
+      storefrontUrl.pathname = "/storefront/index.html";
+      return env.ASSETS.fetch(new Request(storefrontUrl, request));
     }
 
     if (url.pathname.startsWith("/storefront/") && url.pathname.endsWith(".html")) {
