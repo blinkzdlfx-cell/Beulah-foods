@@ -1,15 +1,12 @@
 import { getCurrentSession } from "../services/authService.js";
-import { supabase } from "../lib/supabaseClient.js";
+import { clearCart } from "../services/cartService.js";
 
 const title = document.getElementById("payment-title");
 const message = document.getElementById("payment-message");
 const status = document.getElementById("payment-status");
 const reference = new URLSearchParams(window.location.search).get("reference");
 
-function show(text, type = "") {
-  status.textContent = text;
-  status.className = `alert${type ? ` alert-${type}` : ""}`;
-}
+function show(text, type = "") { status.textContent = text; status.className = `alert${type ? ` alert-${type}` : ""}`; }
 
 async function init() {
   if (!reference) { title.textContent = "Payment reference missing"; message.textContent = "We could not verify this payment."; show("No payment reference was supplied.", "error"); return; }
@@ -17,13 +14,12 @@ async function init() {
   if (!session?.access_token) { title.textContent = "Sign in required"; message.textContent = "Sign in to verify and view this order."; show("Please sign in, then open your orders.", "error"); return; }
 
   try {
-    const response = await fetch(`/api/paystack/verify?reference=${encodeURIComponent(reference)}`, {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    });
+    const response = await fetch(`/api/paystack/verify?reference=${encodeURIComponent(reference)}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data?.error || "PAYMENT_VERIFICATION_FAILED");
 
     if (data.payment_status === "successful") {
+      clearCart();
       title.textContent = "Payment confirmed";
       message.textContent = "Your payment has been verified. Your order is now paid.";
       show(`Order ${String(data.order_id).slice(0, 8)} is confirmed.`, "success");
