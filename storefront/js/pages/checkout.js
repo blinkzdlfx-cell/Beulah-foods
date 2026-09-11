@@ -28,7 +28,10 @@ function setStatus(message, type = "") {
   status.className = `checkout-status${type ? ` checkout-status--${type}` : ""}`;
   status.hidden = !message;
 }
-function escapeHtml(value) { return String(value).replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character])); }
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character]));
+}
 
 async function init() {
   currentSession = await getCurrentSession();
@@ -49,13 +52,23 @@ async function init() {
   const [profile, products, deliveryResult] = await Promise.all([
     getCustomerProfile(),
     getProductsByIds(cart.map((item) => item.productId)),
-    supabase.from("delivery_settings").select("delivery_fee,free_delivery_threshold,is_delivery_enabled,is_free_delivery_enabled").eq("is_active", true).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase
+      .from("delivery_settings")
+      .select("delivery_fee,free_delivery_threshold,is_delivery_enabled,is_free_delivery_enabled")
+      .eq("is_active", true)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
+
   if (deliveryResult.error) throw deliveryResult.error;
   deliverySettings = deliveryResult.data;
 
   const productMap = new Map(products.map((product) => [String(product.id), product]));
-  checkoutItems = cart.map((item) => ({ ...item, product: productMap.get(item.productId) })).filter((item) => item.product);
+  checkoutItems = cart
+    .map((item) => ({ ...item, product: productMap.get(item.productId) }))
+    .filter((item) => item.product);
+
   if (!checkoutItems.length) {
     setStatus("The products in your cart are no longer available. Please return to the shop.", "error");
     form.hidden = true;
@@ -63,9 +76,14 @@ async function init() {
   }
 
   renderSummary();
+
   document.getElementById("full-name").value = profile?.full_name ?? "";
   document.getElementById("phone").value = profile?.phone ?? "";
   document.getElementById("address").value = profile?.address ?? "";
+
+  // checkout.html keeps the form hidden until initialization finishes so users never
+  // see an incomplete form. Explicitly reveal it once real data has loaded.
+  form.hidden = false;
   submit.disabled = false;
 }
 
@@ -75,19 +93,25 @@ function isDeliveryEnabled() {
 
 function calculateLocalDelivery(subtotal) {
   if (!isDeliveryEnabled()) return 0;
+
   const fee = Number(deliverySettings?.delivery_fee ?? 0);
   const freeEnabled = Boolean(deliverySettings?.is_free_delivery_enabled);
   const threshold = Number(deliverySettings?.free_delivery_threshold ?? 0);
+
   if (freeEnabled && subtotal >= threshold) return 0;
   return fee;
 }
 
 function getLocalSubtotal() {
-  return checkoutItems.reduce((total, item) => total + Number(item.product.price) * Math.max(1, Number.parseInt(item.quantity, 10) || 1), 0);
+  return checkoutItems.reduce(
+    (total, item) => total + Number(item.product.price) * Math.max(1, Number.parseInt(item.quantity, 10) || 1),
+    0,
+  );
 }
 
 function renderSummary(totals = null) {
   summary.innerHTML = "";
+
   for (const item of checkoutItems) {
     const quantity = Math.max(1, Number.parseInt(item.quantity, 10) || 1);
     const lineTotal = Number(item.product.price) * quantity;
@@ -113,15 +137,20 @@ function renderSummary(totals = null) {
 async function initializePayment(orderId) {
   const response = await fetch("/api/paystack/initialize", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${currentSession.access_token}` },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${currentSession.access_token}`,
+    },
     body: JSON.stringify({ order_id: orderId }),
   });
+
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const error = new Error(data?.error || "PAYMENT_INITIALIZATION_FAILED");
     error.code = data?.error;
     throw error;
   }
+
   window.location.href = data.authorization_url;
 }
 
@@ -141,6 +170,7 @@ form.addEventListener("submit", async (event) => {
         delivery_address: form.elements.address.value.trim(),
         requested_promo_code: form.elements.promoCode.value.trim() || null,
       });
+
       if (error) throw error;
       pendingOrderId = data.order_id;
       renderSummary(data);
@@ -150,18 +180,32 @@ form.addEventListener("submit", async (event) => {
   } catch (error) {
     console.error(error);
     if (error?.code === "ORDER_NOT_PAYABLE") pendingOrderId = null;
+
     submit.disabled = false;
     submit.textContent = pendingOrderId ? "Retry payment" : "Continue to payment";
+
     const message = error?.message ?? "";
-    if (message.includes("INSUFFICIENT_STOCK")) setStatus("One or more products no longer have enough stock. Please return to your cart and adjust the quantities.", "error");
-    else if (message.includes("PRODUCT_UNAVAILABLE")) setStatus("One or more products are no longer available. Please return to your cart.", "error");
-    else if (message.includes("DELIVERY_DETAILS_REQUIRED")) setStatus("Please complete your delivery details.", "error");
-    else if (message.includes("DELIVERY_CONFIGURATION_INVALID")) setStatus("The store delivery settings are incomplete. Please try again later.", "error");
-    else if (message.includes("PROMO_INVALID")) setStatus("That promo code is invalid or inactive.", "error");
-    else if (message.includes("PROMO_MINIMUM_NOT_MET")) setStatus("This promo code does not meet the minimum order amount.", "error");
-    else if (message.includes("PAYMENT_INITIALIZATION_FAILED")) setStatus("The order is reserved, but payment could not be opened. You can retry payment without creating another order.", "error");
-    else setStatus("We could not prepare the payment. Please try again.", "error");
+    if (message.includes("INSUFFICIENT_STOCK")) {
+      setStatus("One or more products no longer have enough stock. Please return to your cart and adjust the quantities.", "error");
+    } else if (message.includes("PRODUCT_UNAVAILABLE")) {
+      setStatus("One or more products are no longer available. Please return to your cart.", "error");
+    } else if (message.includes("DELIVERY_DETAILS_REQUIRED")) {
+      setStatus("Please complete your delivery details.", "error");
+    } else if (message.includes("DELIVERY_CONFIGURATION_INVALID")) {
+      setStatus("The store delivery settings are incomplete. Please try again later.", "error");
+    } else if (message.includes("PROMO_INVALID")) {
+      setStatus("That promo code is invalid or inactive.", "error");
+    } else if (message.includes("PROMO_MINIMUM_NOT_MET")) {
+      setStatus("This promo code does not meet the minimum order amount.", "error");
+    } else if (message.includes("PAYMENT_INITIALIZATION_FAILED")) {
+      setStatus("The order is reserved, but payment could not be opened. You can retry payment without creating another order.", "error");
+    } else {
+      setStatus("We could not prepare the payment. Please try again.", "error");
+    }
   }
 });
 
-init().catch((error) => { console.error(error); setStatus("We could not prepare checkout. Please try again.", "error"); });
+init().catch((error) => {
+  console.error(error);
+  setStatus("We could not prepare checkout. Please try again.", "error");
+});
