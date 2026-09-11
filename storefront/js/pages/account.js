@@ -4,6 +4,7 @@ import { initHeader } from "../components/navbar.js";
 
 const nav = document.getElementById("site-header-nav");
 const form = document.getElementById("account-form");
+const view = document.getElementById("account-view");
 const alertBox = document.getElementById("account-alert");
 const editButton = document.getElementById("edit-profile");
 const cancelButton = document.getElementById("cancel-edit");
@@ -14,19 +15,18 @@ const phoneInput = document.getElementById("phone");
 const addressInput = document.getElementById("address");
 const emailLabel = document.getElementById("account-email");
 const avatar = document.getElementById("account-avatar");
+const viewFullName = document.getElementById("view-full-name");
+const viewEmail = document.getElementById("view-email");
+const viewPhone = document.getElementById("view-phone");
+const viewAddress = document.getElementById("view-address");
 
 const editableFields = [fullNameInput, phoneInput, addressInput];
-let savedValues = {
-  fullName: "",
-  phone: "",
-  address: "",
-};
+let savedValues = { fullName: "", phone: "", address: "" };
 
 initHeader(nav);
 
 async function loadAccount() {
   const session = await getCurrentSession();
-
   if (!session?.user) {
     window.location.href = "login.html?redirect=account.html";
     return;
@@ -35,7 +35,8 @@ async function loadAccount() {
   const email = session.user.email || "";
   emailInput.value = email;
   emailLabel.textContent = email;
-  avatar.textContent = (email.charAt(0) || "B").toUpperCase();
+  viewEmail.textContent = email || "Not available";
+  avatar.setAttribute("aria-label", "Beulah Foods account");
 
   const profile = await getCustomerProfile();
   if (profile) {
@@ -45,12 +46,14 @@ async function loadAccount() {
   }
 
   captureSavedValues();
+  renderSavedDetails();
   setEditMode(false);
 }
 
 editButton.addEventListener("click", () => {
   clearAlert();
   setEditMode(true);
+  fullNameInput.focus();
 });
 
 cancelButton.addEventListener("click", () => {
@@ -59,9 +62,7 @@ cancelButton.addEventListener("click", () => {
   setEditMode(false);
 });
 
-editableFields.forEach((field) => {
-  field.addEventListener("input", updateDirtyState);
-});
+editableFields.forEach((field) => field.addEventListener("input", updateDirtyState));
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -88,6 +89,7 @@ form.addEventListener("submit", async (event) => {
     phoneInput.value = profile.phone || "";
     addressInput.value = profile.address || "";
     captureSavedValues();
+    renderSavedDetails();
     setEditMode(false);
     showAlert("Your account details have been saved.", "success");
   } catch (error) {
@@ -102,10 +104,8 @@ onAuthStateChange((_event, session) => {
 });
 
 function setEditMode(editing) {
-  editableFields.forEach((field) => {
-    field.disabled = !editing;
-  });
-
+  view.hidden = editing;
+  form.hidden = !editing;
   editButton.hidden = editing;
   cancelButton.hidden = !editing;
   saveButton.hidden = !editing || !hasChanges();
@@ -131,6 +131,13 @@ function captureSavedValues() {
     phone: phoneInput.value.trim(),
     address: addressInput.value.trim(),
   };
+}
+
+function renderSavedDetails() {
+  viewFullName.textContent = savedValues.fullName || "Not added yet";
+  viewEmail.textContent = emailInput.value || "Not available";
+  viewPhone.textContent = savedValues.phone || "Not added yet";
+  viewAddress.textContent = savedValues.address || "Not added yet";
 }
 
 function restoreSavedValues() {
