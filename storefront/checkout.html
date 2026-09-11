@@ -28,6 +28,18 @@
       <p>Confirm your details and review your order before payment.</p>
     </section>
 
+    <div id="checkout-reservation" class="checkout-reservation" hidden>
+      <div class="checkout-reservation__topline">
+        <div>
+          <span class="checkout-reservation__eyebrow">Payment reservation</span>
+          <strong id="checkout-reservation-order">Order reserved</strong>
+        </div>
+        <strong id="checkout-reservation-countdown" class="checkout-reservation__countdown" aria-live="polite">15:00</strong>
+      </div>
+      <p id="checkout-reservation-message">Your items are reserved while you complete payment.</p>
+      <a href="orders.html">View my orders <span aria-hidden="true">→</span></a>
+    </div>
+
     <div id="checkout-status" class="checkout-status" role="status" aria-live="polite" hidden></div>
     <div id="checkout-auth-notice" class="checkout-auth-notice" hidden></div>
 
