@@ -7,6 +7,8 @@ import { getCartItemCount, onCartChange } from "../services/cartService.js";
 
 function ensureResponsiveHeaderStyles() {
   if (document.getElementById("beulah-header-responsive-styles")) return;
+  const favicon = document.querySelector('link[rel="icon"]');
+  if (!favicon) { const link = document.createElement("link"); link.rel = "icon"; link.type = "image/webp"; link.href = "/storefront/assets/beulah-logo.webp"; document.head.append(link); }
   const style = document.createElement("style");
   style.id = "beulah-header-responsive-styles";
   style.textContent = `
@@ -17,6 +19,7 @@ function ensureResponsiveHeaderStyles() {
     .site-header__cart-link svg, .site-header__account-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
     .site-header__cart-link:hover, .site-header__account-icon:hover { background: var(--color-bg); color: var(--color-accent); }
     .site-header__cart-count { position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 4px; display: grid; place-items: center; border-radius: 999px; background: var(--color-accent); color: #fff; font-size: .68rem; font-weight: 800; }
+    .site-header__mark { width: 44px; height: 44px; border-radius: 50%; background-color: var(--color-surface); background-image: url("/storefront/assets/beulah-logo.webp"); background-size: contain; background-position: center; background-repeat: no-repeat; color: transparent; overflow: hidden; }
     @media (max-width: 760px) {
       .site-header__links { display: none; }
       .site-header__menu-toggle { display: inline-flex; }
@@ -48,10 +51,7 @@ function renderNav(navEl, session) {
   desktopLinks.append(createLink("index.html", "Home"), createLink("shop.html", "Shop"), createCartLink());
   if (signedIn) {
     const accountButton = createLink("account.html", "", "site-header__account-icon");
-    accountButton.setAttribute("aria-label", "My account");
-    accountButton.title = "My account";
-    accountButton.innerHTML = personIcon();
-    desktopLinks.append(accountButton);
+    accountButton.setAttribute("aria-label", "My account"); accountButton.title = "My account"; accountButton.innerHTML = personIcon(); desktopLinks.append(accountButton);
   } else {
     desktopLinks.append(createLink("login.html", "Log in", "site-header__auth-link"));
     desktopLinks.append(createLink("signup.html", "Create account", "btn btn-primary site-header__auth-button"));
@@ -69,7 +69,6 @@ function renderNav(navEl, session) {
   }
   navEl.append(desktopLinks, menuToggle, menu);
 }
-
 function createLink(href, text, className = "") { const link = document.createElement("a"); link.href = href; link.textContent = text; if (className) link.className = className; return link; }
 function createCartLink(className = "") { const link = createLink("cart.html", "", className ? `${className} site-header__cart-link` : "site-header__cart-link"); link.setAttribute("aria-label", "Cart"); link.title = "Cart"; link.innerHTML = `${cartIcon()}<span class="site-header__cart-count">${getCartItemCount()}</span>`; return link; }
 function createLogoutButton() { const button = document.createElement("button"); button.type = "button"; button.className = "site-header__menu-link site-header__logout"; button.textContent = "Log out"; button.addEventListener("click", async () => { button.disabled = true; try { await signOutCustomer(); window.location.href = "index.html"; } catch { button.disabled = false; } }); return button; }
