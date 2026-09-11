@@ -2,55 +2,65 @@
 
 ## Phase 1A — Customer shell
 
-- Customer signup/sign-in/log-out: implemented and live-tested by the project owner.
-- Customer profile/account: implemented against `customer_profiles` with read-only view, edit mode, dirty-state Save, Cancel, and authenticated protection.
-- Responsive header: desktop and mobile behavior defined; hamburger is mobile-only.
+- Customer signup/sign-in/log-out: implemented; live-tested by the project owner.
+- Customer profile/account: real `customer_profiles` data with read-only view, edit mode, dirty-state Save, Cancel, and authentication protection.
+- Responsive header: desktop primary navigation plus a mobile-only hamburger. Initial session loading no longer renders an incorrect signed-out state.
 - Shop is a primary navigation destination.
-- My Account and Log out remain inside the mobile hamburger menu.
-- Desktop signed-in users get a compact account icon rather than a text My Account navigation item.
+- My Account and Log out remain inside the mobile hamburger menu; desktop signed-in users get a compact account icon.
+- Clean public routes are served through `worker.js`.
 
 ## Phase 1B — Catalogue foundation
 
-Implemented in the repository:
-
-- `categories` database table.
-- `products` database table.
-- Public RLS for active categories/products only.
+Implemented:
+- `categories` and `products` database tables.
+- Active-only public RLS.
 - Real Supabase catalogue service.
-- Shop page with live product loading.
-- Category filtering.
+- Shop with live products and category filtering.
 - Product detail page using a slug query parameter.
-- Product availability state from live inventory.
+- Live product pricing and stock availability.
+- Admin category/product CRUD foundation with database-side admin authorization.
 - No fake products, prices, images, or catalogue data.
 
-The catalogue migration must still be applied to the live Supabase project before the new shop can display records.
-
-## Phase 2 — Shopping foundation
+## Phase 2 — Shopping and order foundation
 
 Implemented:
-
 - Browser cart persistence using localStorage.
-- Add-to-cart from product cards and product detail.
-- Quantity changes and item removal.
-- Live catalogue revalidation when rendering the cart.
-- Cart subtotal calculated from live product prices for display only.
-- Authenticated checkout shell populated from the real customer profile.
-- Order, order-item, reservation, and payment database foundation.
-- Reservation expiry defaults to 15 minutes.
-- Customer RLS for viewing their own orders, order items, reservations, and payments.
+- Add, quantity change, and remove controls.
+- Live catalogue revalidation when rendering the cart/checkout.
+- Authenticated checkout populated from the real customer profile.
+- Trusted `create_pending_order` RPC that rechecks live prices/stock, snapshots order items, reserves stock, and creates a pending payment.
+- 15-minute reservation model with trusted expired-reservation release function.
+- Customer RLS for own orders, order items, reservations, and payments.
+- Customer My Orders and order detail pages.
+- Admin order and transaction read views.
+- Admin inventory visibility and low-stock information.
 
-Intentionally not activated yet:
-
+Intentionally not activated:
 - Payment provider initialization.
-- Server-side payment verification.
-- Final authoritative fee calculation.
+- Server-side provider verification/webhooks.
+- Exact fee/delivery rules.
 - Promo/discount calculation.
-- Trusted order creation/RPC.
-- Stock reservation mutation.
 - Transactional email.
 
-Those require the payment provider and final business rules to be explicitly connected. The checkout button must not claim payment success until that work exists.
+These require explicit business/provider decisions and must not be invented.
 
-## Next major build area
+## Admin authorization foundation
 
-The next substantial work should be the admin system and trusted server-side order/payment workflow, followed by transactional email and final end-to-end testing.
+Implemented:
+- `admin_users` table.
+- Database-side `is_admin()` authorization helper.
+- RLS policies for admin catalogue and operational record access.
+- Trusted-only `provision_admin()` boundary.
+- Admin sign-in checks explicit database authorization instead of client metadata.
+
+Admin provisioning itself remains a deliberate trusted operation; do not create an admin by passing a role flag from browser signup.
+
+## Known remaining work
+
+- Finalize and configure the selected payment provider.
+- Implement provider initialization and server-side verification/webhooks.
+- Approve/configure fees, delivery, and promo rules.
+- Complete richer admin order/customer management.
+- Configure Resend transactional email.
+- Apply all pending Supabase migrations to the live project.
+- Perform full live end-to-end testing after those services are configured.
