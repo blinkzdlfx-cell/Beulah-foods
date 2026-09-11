@@ -7,7 +7,7 @@
 - Responsive header: desktop primary navigation plus a mobile-only hamburger. Initial session loading no longer renders an incorrect signed-out state.
 - Shop is a primary navigation destination.
 - My Account and Log out remain inside the mobile hamburger menu; desktop signed-in users get a compact account icon.
-- Clean public routes are served through `worker.js`.
+- Clean public routes are served through `worker.js`, with legacy `/storefront/*.html` paths normalized to clean URLs.
 
 ## Phase 1B — Catalogue foundation
 
@@ -34,6 +34,8 @@ Implemented:
 - Customer My Orders and order detail pages.
 - Admin order and transaction read views.
 - Admin inventory visibility and low-stock information.
+- Admin operational order-status updates through a narrow trusted database function; payment status is protected from browser/admin mutation.
+- Cart remains intact until a payment is actually completed; pending reservation creation does not falsely imply payment success.
 
 Intentionally not activated:
 - Payment provider initialization.
@@ -52,6 +54,7 @@ Implemented:
 - RLS policies for admin catalogue and operational record access.
 - Trusted-only `provision_admin()` boundary.
 - Admin sign-in checks explicit database authorization instead of client metadata.
+- Admin order-status updates are restricted to operational status; payment truth remains provider-controlled.
 
 Admin provisioning itself remains a deliberate trusted operation; do not create an admin by passing a role flag from browser signup.
 
