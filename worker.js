@@ -49,6 +49,21 @@ export default {
       return env.ASSETS.fetch(new Request(storefrontUrl, request));
     }
 
+    // Keep the admin dashboard available at its directory URL while assets
+    // remain under /admin/. html_handling is disabled, so /admin/ needs an
+    // explicit mapping to /admin/index.html.
+    if (url.pathname === "/admin") {
+      const canonical = new URL(request.url);
+      canonical.pathname = "/admin/";
+      return Response.redirect(canonical, 301);
+    }
+
+    if (url.pathname === "/admin/") {
+      const adminUrl = new URL(request.url);
+      adminUrl.pathname = "/admin/index.html";
+      return env.ASSETS.fetch(new Request(adminUrl, request));
+    }
+
     // Support both /login and /login.html style public URLs. This keeps
     // manually entered/bookmarked clean URLs from falling through to 404.
     const cleanPath = url.pathname.replace(/^\//, "");
