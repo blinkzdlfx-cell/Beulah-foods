@@ -1,30 +1,31 @@
 .shop-page { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 72px 0 104px; }
 .shop-heading { max-width: 720px; margin-bottom: 40px; }
+.shop-heading .eyebrow::before { display: none; }
 .shop-heading h1 { margin: 0 0 14px; font-family: var(--font-display); font-size: clamp(2.7rem, 5vw, 4.4rem); line-height: .98; letter-spacing: -.06em; }
 .shop-heading > p:last-child { max-width: 620px; color: var(--color-text-muted); font-size: 1.05rem; line-height: 1.75; }
 .shop-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid var(--color-border); }
 .shop-toolbar__meta { color: var(--color-text-muted); font-size: .86rem; font-weight: 650; }
 .mobile-filter-toggle { display: none; }
 .shop-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 32px; align-items: start; }
-.shop-filters { position: sticky; top: 100px; padding: 20px; border-radius: 18px; background: var(--color-surface); }
+.shop-filters { position: sticky; top: 100px; padding: 20px; border-radius: 10px; background: var(--color-surface); }
 .shop-filters h2 { margin: 0 0 14px; font-size: .9rem; letter-spacing: .02em; }
 .filter-option { display: flex; gap: 10px; align-items: center; padding: 10px 0; color: var(--color-text-muted); font-size: .9rem; cursor: pointer; }
 .filter-option:hover { color: var(--color-text); }
 .filter-option input { accent-color: var(--color-accent); }
 .filter-error { color: var(--color-danger); font-size: .85rem; }
 .shop-results { min-width: 0; }
-.product-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
-.product-card { overflow: hidden; border: 1px solid var(--color-border); border-radius: 20px; background: var(--color-surface); box-shadow: 0 8px 28px rgba(31, 35, 32, .055); transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
-.product-card:hover { transform: translateY(-3px); border-color: #d5d2ca; box-shadow: 0 16px 40px rgba(31, 35, 32, .09); }
-.product-card__media { display: block; aspect-ratio: 1 / .92; overflow: hidden; background: #f3f1eb; text-decoration: none; }
+.product-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.product-card { overflow: hidden; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); box-shadow: var(--shadow-sm); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.product-card:hover { transform: translateY(-2px); border-color: var(--color-border-strong); box-shadow: var(--shadow-md); }
+.product-card__media { display: block; aspect-ratio: 1 / .92; overflow: hidden; background: var(--color-surface-subtle); text-decoration: none; }
 .product-card__image { display: block; width: 100%; height: 100%; object-fit: cover; }
-.product-card__image-slot { display: block; width: 100%; height: 100%; background: linear-gradient(145deg, #f5f3ee 0%, #ebe8df 100%); }
-.product-card__body { padding: 20px; }
-.product-card__availability { margin: 0 0 8px; color: var(--color-accent); font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
+.product-card__image-slot { display: block; width: 100%; height: 100%; background: var(--color-surface-subtle); }
+.product-card__body { padding: 18px; }
+.product-card__availability { margin: 0 0 8px; color: var(--color-accent-dark); font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
 .product-card__availability.is-unavailable { color: var(--color-danger); }
 .product-card h2 { margin: 0 0 8px; font-size: 1.08rem; letter-spacing: -.02em; }
 .product-card h2 a { color: inherit; text-decoration: none; }
-.product-card h2 a:hover { color: var(--color-accent); }
+.product-card h2 a:hover { color: var(--color-accent-dark); }
 .product-card__description { min-height: 44px; margin: 0 0 18px; color: var(--color-text-muted); font-size: .88rem; line-height: 1.6; }
 .product-card__footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .product-card__footer strong { white-space: nowrap; font-size: .98rem; }
