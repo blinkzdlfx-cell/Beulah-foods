@@ -10,6 +10,8 @@ const naira = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN
 function escapeHtml(value) { return String(value).replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character])); }
 function escapeAttribute(value) { return escapeHtml(value).replace(/'/g, "&#039;"); }
 function setStatus(message, type = "") { status.textContent = message; status.className = `product-status${type ? ` product-status--${type}` : ""}`; status.hidden = !message; }
+function setMeta(name, content) { let node = document.querySelector(`meta[name="${name}"]`); if (!node) { node = document.createElement("meta"); node.name = name; document.head.append(node); } node.content = content; }
+function setProperty(property, content) { let node = document.querySelector(`meta[property="${property}"]`); if (!node) { node = document.createElement("meta"); node.setAttribute("property", property); document.head.append(node); } node.content = content; }
 
 async function init() {
   if (!slug) { setStatus("This product could not be found.", "error"); return; }
@@ -17,7 +19,39 @@ async function init() {
     const product = await getProductBySlug(slug);
     if (!product) { setStatus("This product is no longer available.", "error"); return; }
     const inStock = Number(product.stock_quantity) > 0;
+    const description = String(product.description || `Shop ${product.name} from Beulah Foods.`).trim();
+    const canonicalUrl = `${window.location.origin}/product?slug=${encodeURIComponent(product.slug || slug)}`;
     document.title = `${product.name} — Beulah Foods`;
+    setMeta("description", description.slice(0, 155));
+    setMeta("robots", "index, follow, max-image-preview:large");
+    setProperty("og:type", "product");
+    setProperty("og:site_name", "Beulah Foods");
+    setProperty("og:title", `${product.name} — Beulah Foods`);
+    setProperty("og:description", description.slice(0, 200));
+    setProperty("og:url", canonicalUrl);
+    if (product.image_src) setProperty("og:image", product.image_src);
+
+    const oldStructuredData = document.getElementById("product-structured-data");
+    oldStructuredData?.remove();
+    const structuredData = document.createElement("script");
+    structuredData.id = "product-structured-data";
+    structuredData.type = "application/ld+json";
+    structuredData.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: product.name,
+      description,
+      image: product.image_src ? [product.image_src] : undefined,
+      offers: {
+        "@type": "Offer",
+        priceCurrency: "NGN",
+        price: Number(product.price).toFixed(2),
+        availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+        url: canonicalUrl,
+      },
+    });
+    document.head.append(structuredData);
+
     const media = product.image_src
       ? `<div class="product-detail__media"><img src="${escapeAttribute(product.image_src)}" alt="${escapeAttribute(product.name)}"></div>`
       : "";
