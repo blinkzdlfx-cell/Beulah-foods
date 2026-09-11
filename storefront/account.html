@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <base href="/storefront/" />
   <title>My Account — Beulah Foods</title>
@@ -25,26 +25,34 @@
     <section class="page-heading">
       <p class="eyebrow">My account</p>
       <h1>Account details</h1>
-      <p>Keep your contact and delivery information up to date for a smoother checkout.</p>
+      <p>Keep your contact and delivery information ready for a smoother checkout.</p>
     </section>
 
     <section class="account-layout" aria-label="Account details">
       <aside class="account-summary card">
         <div class="account-avatar" id="account-avatar" aria-hidden="true">B</div>
-        <div>
+        <div class="account-summary__identity">
           <p class="account-summary__label">Your account</p>
           <strong id="account-email">Loading...</strong>
         </div>
-        <a class="account-summary__link" href="index.html">Continue shopping</a>
+        <a class="account-summary__link" href="shop.html">Continue shopping</a>
       </aside>
 
       <div class="card account-form-card">
+        <div class="account-form-header">
+          <div>
+            <p class="account-form-eyebrow">Personal information</p>
+            <h2>Contact & delivery details</h2>
+          </div>
+          <button class="btn btn-secondary" type="button" id="edit-profile">Edit</button>
+        </div>
+
         <div id="account-alert" class="alert" role="status" aria-live="polite" hidden></div>
 
         <form id="account-form" novalidate>
           <div class="form-field">
             <label for="full-name">Full name</label>
-            <input id="full-name" name="fullName" type="text" autocomplete="name" required />
+            <input id="full-name" name="fullName" type="text" autocomplete="name" required disabled />
           </div>
 
           <div class="form-field">
@@ -55,15 +63,18 @@
 
           <div class="form-field">
             <label for="phone">Phone number</label>
-            <input id="phone" name="phone" type="tel" autocomplete="tel" />
+            <input id="phone" name="phone" type="tel" autocomplete="tel" disabled />
           </div>
 
           <div class="form-field">
             <label for="address">Delivery address</label>
-            <textarea id="address" name="address" rows="4" autocomplete="street-address"></textarea>
+            <textarea id="address" name="address" rows="4" autocomplete="street-address" disabled></textarea>
           </div>
 
-          <button class="btn btn-primary" type="submit" id="save-profile">Save changes</button>
+          <div class="account-form-actions">
+            <button class="btn btn-secondary" type="button" id="cancel-edit" hidden>Cancel</button>
+            <button class="btn btn-primary" type="submit" id="save-profile" hidden>Save changes</button>
+          </div>
         </form>
       </div>
     </section>
