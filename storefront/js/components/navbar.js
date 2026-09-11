@@ -5,6 +5,7 @@ const page = (name) => `/${name}`;
 
 function ensureStyles() {
   if (document.getElementById("beulah-header-responsive-styles")) return;
+
   const favicon = document.querySelector('link[rel="icon"]') || document.createElement("link");
   favicon.rel = "icon";
   favicon.type = "image/webp";
@@ -14,21 +15,25 @@ function ensureStyles() {
   const style = document.createElement("style");
   style.id = "beulah-header-responsive-styles";
   style.textContent = `
-    .site-header__links { display:none !important; }
-    .site-header__menu-toggle { display:inline-flex !important; width:42px; height:42px; padding:9px; flex-direction:column; justify-content:center; gap:5px; border:1px solid var(--color-border); border-radius:10px; background:var(--color-surface); color:var(--color-text); cursor:pointer; }
+    .site-header__nav { position:relative; margin-left:auto; display:flex; align-items:center; gap:12px; }
+    .site-header__links { display:flex; align-items:center; gap:3px; }
+    .site-header__links a, .site-header__links button { padding:8px 11px; border-radius:7px; color:var(--color-text-muted); font-size:.9rem; font-weight:600; text-decoration:none; }
+    .site-header__links a:hover, .site-header__links button:hover { background:var(--color-surface-subtle); color:var(--color-text); }
+    .site-header__links .site-header__logout { border:0; background:transparent; font:inherit; cursor:pointer; text-align:left; }
+    .site-header__cart-link { position:relative; display:inline-flex; align-items:center; gap:7px; }
+    .site-header__cart-link svg,.site-header__account-icon svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+    .site-header__cart-count { min-width:18px; height:18px; padding:0 4px; display:grid; place-items:center; border-radius:999px; background:var(--color-accent); color:var(--color-accent-ink); font-size:.68rem; font-weight:800; }
+    .site-header__menu-toggle { display:none; width:42px; height:42px; padding:9px; flex-direction:column; justify-content:center; gap:5px; border:1px solid var(--color-border); border-radius:10px; background:var(--color-surface); color:var(--color-text); cursor:pointer; }
     .site-header__menu-toggle:hover { border-color:var(--color-accent); background:var(--color-bg); }
     .site-header__menu-toggle span { display:block; width:100%; height:2px; border-radius:99px; background:currentColor; }
-    .site-header__menu { position:absolute; top:calc(100% + 10px); right:0; width:min(320px,calc(100vw - 32px)); display:grid !important; grid-template-columns:1fr; gap:3px; padding:10px; border:1px solid var(--color-border); border-radius:14px; background:var(--color-surface); box-shadow:var(--shadow-md); z-index:100; }
+    .site-header__menu { position:absolute; top:calc(100% + 10px); right:0; width:min(320px,calc(100vw - 32px)); display:grid; grid-template-columns:1fr; gap:3px; padding:10px; border:1px solid var(--color-border); border-radius:14px; background:var(--color-surface); box-shadow:var(--shadow-md); z-index:100; }
     .site-header__menu[hidden] { display:none !important; }
-    .site-header__menu > a, .site-header__menu > button { display:flex !important; visibility:visible !important; opacity:1 !important; }
+    .site-header__menu > a, .site-header__menu > button { display:flex; visibility:visible; opacity:1; }
     .site-header__menu-link { align-items:center; width:100%; min-height:46px; padding:11px 12px; border-radius:9px; color:var(--color-text) !important; text-decoration:none; }
     .site-header__menu-link:hover, .site-header__menu-link:focus-visible { background:var(--color-accent-soft) !important; color:var(--color-accent-dark) !important; }
     .site-header__menu .site-header__cart-link { justify-content:flex-start; margin:0; border:0; background:transparent; border-radius:9px; gap:10px; box-shadow:none; }
-    .site-header__cart-link { position:relative; }
-    .site-header__cart-link svg,.site-header__account-icon svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
-    .site-header__cart-count { position:absolute; top:4px; right:4px; min-width:18px; height:18px; padding:0 4px; display:grid; place-items:center; border-radius:999px; background:var(--color-accent); color:var(--color-accent-ink); font-size:.68rem; font-weight:800; }
     .site-header__cart-label { display:inline; }
-    .site-header__logout { border:0; background:transparent; font:inherit; text-align:left; cursor:pointer; }
+    .site-header__menu .site-header__logout { border:0; background:transparent; font:inherit; text-align:left; cursor:pointer; }
     .site-header__menu-divider { height:1px; margin:6px 4px; background:var(--color-border); }
     .logout-modal { position:fixed; inset:0; z-index:200; display:grid; place-items:center; padding:20px; }
     .logout-modal[hidden] { display:none; }
@@ -39,7 +44,15 @@ function ensureStyles() {
     .logout-modal__dialog p { margin:0; color:var(--color-text-muted); line-height:1.55; }
     .logout-modal__actions { display:flex; justify-content:flex-end; gap:8px; margin-top:22px; }
     .logout-modal__actions .btn { min-width:90px; }
-    @media(max-width:760px) { .site-header__inner { position:relative; } .logout-modal { padding:16px; } .logout-modal__dialog { padding:20px; } .logout-modal__actions { justify-content:stretch; } .logout-modal__actions .btn { flex:1; } }
+    @media(max-width:760px) {
+      .site-header__links { display:none; }
+      .site-header__menu-toggle { display:inline-flex; }
+      .site-header__inner { position:relative; }
+      .logout-modal { padding:16px; }
+      .logout-modal__dialog { padding:20px; }
+      .logout-modal__actions { justify-content:stretch; }
+      .logout-modal__actions .btn { flex:1; }
+    }
   `;
   document.head.append(style);
 }
@@ -47,6 +60,7 @@ function ensureStyles() {
 export function initHeader(navEl) {
   if (!navEl) return;
   ensureStyles();
+
   let lastSession = null;
   let resolved = false;
   navEl.hidden = true;
@@ -79,6 +93,27 @@ function renderNav(navEl, session) {
   navEl.textContent = "";
   const signedIn = Boolean(session?.user);
 
+  const desktopLinks = document.createElement("div");
+  desktopLinks.className = "site-header__links";
+
+  desktopLinks.append(
+    createLink(page("index.html"), "Home"),
+    createLink(page("shop.html"), "Shop"),
+    createCartLink(),
+  );
+
+  if (signedIn) {
+    desktopLinks.append(
+      createLink(page("account.html"), "My Account"),
+      createLogoutButton(),
+    );
+  } else {
+    desktopLinks.append(
+      createLink(page("login.html"), "Log in"),
+      createLink(page("signup.html"), "Create account", "btn btn-primary"),
+    );
+  }
+
   const toggle = document.createElement("button");
   toggle.type = "button";
   toggle.className = "site-header__menu-toggle";
@@ -104,9 +139,12 @@ function renderNav(navEl, session) {
     const divider = document.createElement("div");
     divider.className = "site-header__menu-divider";
     divider.setAttribute("aria-hidden", "true");
-    menu.append(divider, createLogoutButton());
+    menu.append(divider, createLogoutButton("site-header__menu-link"));
   } else {
-    menu.append(createLink(page("login.html"), "Log in", "site-header__menu-link"), createLink(page("signup.html"), "Create account", "btn btn-primary site-header__menu-link"));
+    menu.append(
+      createLink(page("login.html"), "Log in", "site-header__menu-link"),
+      createLink(page("signup.html"), "Create account", "btn btn-primary site-header__menu-link"),
+    );
   }
 
   menu.querySelectorAll("a").forEach((link) => {
@@ -127,16 +165,18 @@ function renderNav(navEl, session) {
       const activeMenu = navEl.querySelector(".site-header__menu");
       if (activeToggle && activeMenu && !navEl.contains(event.target)) closeMenu(activeToggle, activeMenu);
     });
+
     document.addEventListener("keydown", (event) => {
       if (event.key !== "Escape") return;
       const activeToggle = navEl.querySelector(".site-header__menu-toggle");
       const activeMenu = navEl.querySelector(".site-header__menu");
       if (activeToggle && activeMenu) closeMenu(activeToggle, activeMenu);
     });
+
     navEl.dataset.outsideClickBound = "true";
   }
 
-  navEl.append(toggle, menu);
+  navEl.append(desktopLinks, toggle, menu);
 }
 
 function closeMenu(toggle, menu) {
@@ -145,9 +185,34 @@ function closeMenu(toggle, menu) {
   toggle.setAttribute("aria-label", "Open menu");
 }
 
-function createLink(href, text, className = "") { const link = document.createElement("a"); link.href = href; link.textContent = text; if (className) link.className = className; return link; }
-function createCartLink(className = "") { const link = createLink(page("cart.html"), "Cart", className ? `${className} site-header__cart-link` : "site-header__cart-link"); link.setAttribute("aria-label", "Cart"); link.innerHTML = `${cartIcon()}<span class="site-header__cart-label">Cart</span><span class="site-header__cart-count">${getCartItemCount()}</span>`; return link; }
-function createLogoutButton() { const button = document.createElement("button"); button.type = "button"; button.className = "site-header__menu-link site-header__logout"; button.textContent = "Log out"; button.addEventListener("click", () => openLogoutModal()); return button; }
+function createLink(href, text, className = "") {
+  const link = document.createElement("a");
+  link.href = href;
+  link.textContent = text;
+  if (className) link.className = className;
+  return link;
+}
+
+function createCartLink(className = "") {
+  const link = createLink(
+    page("cart.html"),
+    "Cart",
+    className ? `${className} site-header__cart-link` : "site-header__cart-link",
+  );
+  link.setAttribute("aria-label", "Cart");
+  link.innerHTML = `${cartIcon()}<span class="site-header__cart-label">Cart</span><span class="site-header__cart-count">${getCartItemCount()}</span>`;
+  return link;
+}
+
+function createLogoutButton(className = "") {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = className || "site-header__logout";
+  if (!className) button.classList.add("site-header__logout");
+  button.textContent = "Log out";
+  button.addEventListener("click", () => openLogoutModal());
+  return button;
+}
 
 function openLogoutModal() {
   let modal = document.getElementById("beulah-logout-modal");
@@ -169,15 +234,19 @@ function openLogoutModal() {
       </section>
     `;
     document.body.append(modal);
+
     modal.addEventListener("click", async (event) => {
       if (event.target.closest("[data-close], [data-cancel]")) {
         modal.hidden = true;
         return;
       }
+
       const confirmButton = event.target.closest("[data-confirm]");
       if (!confirmButton) return;
+
       confirmButton.disabled = true;
       confirmButton.textContent = "Logging out...";
+
       try {
         await signOutCustomer();
         window.location.href = page("index.html");
@@ -186,12 +255,16 @@ function openLogoutModal() {
         confirmButton.textContent = "Log out";
       }
     });
+
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && !modal.hidden) modal.hidden = true;
     });
   }
+
   modal.hidden = false;
   modal.querySelector("[data-cancel]").focus();
 }
 
-function cartIcon() { return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L20.5 8H6"/><circle cx="10" cy="19" r="1.3"/><circle cx="18" cy="19" r="1.3"/></svg>'; }
+function cartIcon() {
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L20.5 8H6"/><circle cx="10" cy="19" r="1.3"/><circle cx="18" cy="19" r="1.3"/></svg>';
+}
