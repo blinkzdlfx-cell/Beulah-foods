@@ -1,9 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-NG">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Beulah Foods — Admin</title>
+  <title>Beulah Foods Admin — Catalogue, Orders & Store Settings</title>
+  <meta name="robots" content="noindex, nofollow" />
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/admin.css" />
   <link rel="stylesheet" href="css/admin-refinement.css" />
@@ -20,7 +21,7 @@
   </section>
 
   <section id="admin-app" class="hidden">
-    <header class="admin-header"><div class="admin-header__inner"><div class="admin-brand">Beulah <span>Foods</span> Admin</div><div class="actions"><span id="admin-name" class="muted"></span><button id="admin-logout" class="btn btn-secondary" type="button">Log out</button></div></div></header>
+    <header class="admin-header"><div class="admin-header__inner"><div class="admin-brand">Beulah <span>Foods</span> Admin</div><nav class="admin-nav" aria-label="Admin navigation"><a href="/admin/">Dashboard</a><a href="/admin/orders.html">Orders</a><a href="/admin/transactions.html">Transactions</a></nav><div class="actions"><span id="admin-name" class="muted"></span><button id="admin-logout" class="btn btn-secondary" type="button">Log out</button></div></div></header>
     <main class="admin-main">
       <div id="admin-alert" class="alert" role="status" hidden></div>
       <div class="metric-grid" style="margin-bottom:24px"><div class="metric"><span class="muted">Products</span><strong id="product-count">0</strong></div><div class="metric"><span class="muted">Active products</span><strong id="active-count">0</strong></div><div class="metric"><span class="muted">Low stock</span><strong id="low-stock-count">0</strong></div></div>
