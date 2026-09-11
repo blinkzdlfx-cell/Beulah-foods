@@ -2,7 +2,7 @@ import { initHeader } from "../components/navbar.js";
 import { getCurrentSession } from "../services/authService.js";
 import { getCustomerProfile } from "../services/profileService.js";
 import { getProducts } from "../services/catalogService.js";
-import { getCart, clearCart } from "../services/cartService.js";
+import { getCart } from "../services/cartService.js";
 import { supabase } from "../lib/supabaseClient.js";
 
 initHeader(document.getElementById("site-header-nav"));
@@ -87,8 +87,7 @@ form.addEventListener("submit", async (event) => {
     });
     if (error) throw error;
 
-    clearCart();
-    setStatus(`Order ${data.order_id.slice(0, 8)} created and reserved for 15 minutes. Payment is not connected yet.`, "success");
+    setStatus(`Order ${data.order_id.slice(0, 8)} created and reserved for 15 minutes. Payment is not connected yet, so your cart has been kept.`, "success");
     submit.textContent = "Payment not connected";
     submit.disabled = true;
   } catch (error) {
