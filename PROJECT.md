@@ -2,44 +2,68 @@
 
 ## What this is
 
-Beulah Foods is a food-products e-commerce website. It has two clearly
-separated areas:
+Beulah Foods is a food-products e-commerce website with two clearly separated areas:
 
-1. **Storefront** (`/storefront`) — where customers browse, buy, and track
-   their orders.
-2. **Admin dashboard** (`/admin`) — where staff manage products, orders,
-   payments, customers, promo codes, announcements, and testimonials.
+1. **Storefront** — customers browse products, manage a cart, check out, and track orders.
+2. **Admin dashboard** — authorized staff manage catalogue data, inventory, orders, and payment records.
 
-This is a **separate project from BFIS** (the internal Beulah Foods
-inventory system). Nothing here should assume or depend on BFIS.
+This is a separate project from BFIS (the internal Beulah Foods inventory system). Nothing here should assume or depend on BFIS.
 
-## Why the project is built this way
+## Locked stack
 
-Development on this project happens across many different tools — Claude,
-Replit, OpenCode, Kilo Code, VS Code, and mobile editors like Acode. Some
-of those tools don't run a build step well, and switching between them is
-much easier if the project is just plain files that any editor can open
-and any static file server can run — no compiling, no bundling, no
-"works on my machine" surprises.
+The project intentionally uses plain HTML5, normal CSS, Vanilla JavaScript, Supabase, and static deployment. No React, Next.js, Vue, Angular, Tailwind, Bootstrap, Vite, or unnecessary build pipeline should be introduced.
 
-That's why the project is intentionally kept simple: normal HTML pages,
-normal CSS, vanilla JavaScript, and Supabase as the backend. See
-`ARCHITECTURE.md` for the full technical reasoning.
+Development happens across Claude, Replit, OpenCode, Kilo Code, VS Code, and mobile editors. The repository therefore remains portable and readable as normal files.
+
+## Current implementation status
+
+### Customer foundation
+- Supabase Auth signup, email confirmation, login, logout, session handling, forgot/reset password foundation.
+- Customer profiles with RLS and authenticated account editing.
+- Shared responsive navigation with desktop primary links and a mobile-only hamburger.
+- Authenticated navigation exposes My Account appropriately without putting it in the desktop text navigation.
+
+### Catalogue foundation
+- Real Supabase categories and products.
+- Public access is restricted to active catalogue records.
+- Shop, category filtering, product details, pricing, and stock availability use live database records.
+
+### Shopping foundation
+- Persistent browser cart.
+- Cart quantity/removal controls and live catalogue revalidation.
+- Checkout populated from the authenticated customer profile.
+- Trusted provider-neutral order creation RPC rechecks product availability/prices, snapshots order items, reserves stock for 15 minutes, and creates a pending payment record.
+- Payment provider initialization and verification are intentionally not implemented yet.
+
+### Admin foundation
+- Explicit `admin_users` authorization table and database-side `is_admin()` check.
+- Trusted-only admin provisioning function; client-controlled role metadata is never used for authorization.
+- Admin login and catalogue/category/inventory foundation.
+- Admin order and transaction read views.
+
+### Customer orders
+- Authenticated order list and individual order detail pages.
+
+## Important open decisions
+
+The following must not be invented by an AI coding agent:
+
+- payment provider
+- exact delivery/fee rules
+- promo-code/discount rules
+- admin-account provisioning procedure beyond the trusted database boundary
+- transactional email policy/templates where business approval is required
+
+Agents may build provider-neutral interfaces and safe database boundaries around these decisions, but must clearly document what remains blocked.
 
 ## Read these before building anything
 
 | File | What it covers |
 |---|---|
-| `ARCHITECTURE.md` | The locked tech stack and how the pieces fit together |
-| `DEVELOPMENT.md` | How to work on a feature, step by step, and how to run the project locally |
-| `DESIGN.md` | Visual direction for storefront and admin |
-| `FEATURES.md` | The full feature list for storefront and admin, with status |
-| `RULES.md` | Hard rules that must never be broken |
-| `AGENTS.md` | Rules specifically for AI coding agents working in this repo |
-
-## Current status
-
-The project has just been (re)started. Only documentation and the base
-folder structure exist so far — no application features have been built
-yet. See the "First Task" report delivered alongside these docs for exactly
-what was created and what's still an open decision.
+| `ARCHITECTURE.md` | Technical structure and data flow |
+| `DEVELOPMENT.md` | Development and testing workflow |
+| `DESIGN.md` | Visual direction |
+| `FEATURES.md` | Current feature status |
+| `RULES.md` | Hard project rules |
+| `AGENTS.md` | AI coding-agent rules |
+| `PHASE_PROGRESS.md` | Phase-by-phase implementation progress |
