@@ -14,34 +14,32 @@ function ensureStyles() {
   const style = document.createElement("style");
   style.id = "beulah-header-responsive-styles";
   style.textContent = `
-    .site-header__menu-toggle { display:none !important; }
-    .site-header__menu { display:none; }
-    .site-header__links { align-items:center; }
-    .site-header__auth-link { margin-left:8px; }
-    .site-header__auth-button { min-height:40px; padding:9px 14px; font-size:.82rem; }
-    .site-header__cart-link,.site-header__account-icon { position:relative; width:42px; height:42px; display:inline-flex; align-items:center; justify-content:center; margin-left:4px; border:1px solid var(--color-border); border-radius:12px; color:var(--color-text); text-decoration:none; background:var(--color-surface); }
+    .site-header__links { display:none !important; }
+    .site-header__menu-toggle { display:inline-flex !important; width:42px; height:42px; padding:9px; flex-direction:column; justify-content:center; gap:5px; border:1px solid var(--color-border); border-radius:10px; background:var(--color-surface); color:var(--color-text); cursor:pointer; }
+    .site-header__menu-toggle:hover { border-color:var(--color-accent); background:var(--color-bg); }
+    .site-header__menu-toggle span { display:block; width:100%; height:2px; border-radius:99px; background:currentColor; }
+    .site-header__menu { position:absolute; top:calc(100% + 10px); right:0; width:min(320px,calc(100vw - 32px)); display:grid !important; grid-template-columns:1fr; gap:3px; padding:10px; border:1px solid var(--color-border); border-radius:14px; background:var(--color-surface); box-shadow:var(--shadow-md); z-index:100; }
+    .site-header__menu[hidden] { display:none !important; }
+    .site-header__menu > a, .site-header__menu > button { display:flex !important; visibility:visible !important; opacity:1 !important; }
+    .site-header__menu-link { align-items:center; width:100%; min-height:46px; padding:11px 12px; border-radius:9px; color:var(--color-text) !important; text-decoration:none; }
+    .site-header__menu-link:hover, .site-header__menu-link:focus-visible { background:var(--color-accent-soft) !important; color:var(--color-accent-dark) !important; }
+    .site-header__menu .site-header__cart-link { justify-content:flex-start; margin:0; border:0; background:transparent; border-radius:9px; gap:10px; box-shadow:none; }
+    .site-header__cart-link { position:relative; }
     .site-header__cart-link svg,.site-header__account-icon svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
-    .site-header__cart-link:hover,.site-header__account-icon:hover { background:var(--color-bg); color:var(--color-accent); }
-    .site-header__cart-count { position:absolute; top:-5px; right:-5px; min-width:18px; height:18px; padding:0 4px; display:grid; place-items:center; border-radius:999px; background:var(--color-accent); color:#172300; font-size:.68rem; font-weight:800; }
-    .site-header__cart-label { display:none; }
-    .site-header__mark { width:44px; height:44px; border-radius:50%; background:var(--color-surface) url("/storefront/assets/beulah-logo.webp") center/contain no-repeat; color:transparent; overflow:hidden; }
-    .site-header__menu-link { display:flex !important; align-items:center; width:100%; min-height:46px; padding:11px 12px; border-radius:10px; color:var(--color-text) !important; text-decoration:none; visibility:visible !important; opacity:1 !important; }
-    .site-header__menu-link:hover { background:var(--color-accent-soft) !important; color:var(--color-accent-dark) !important; }
-    .site-header__menu .site-header__cart-link { width:100%; height:auto; min-height:46px; justify-content:flex-start; margin-left:0; border:0; background:transparent; border-radius:10px; gap:10px; box-shadow:none; }
-    .site-header__menu .site-header__cart-label { display:inline; }
-    .site-header__menu .site-header__cart-count { top:50%; right:12px; transform:translateY(-50%); }
+    .site-header__cart-count { position:absolute; top:4px; right:4px; min-width:18px; height:18px; padding:0 4px; display:grid; place-items:center; border-radius:999px; background:var(--color-accent); color:var(--color-accent-ink); font-size:.68rem; font-weight:800; }
+    .site-header__cart-label { display:inline; }
     .site-header__logout { border:0; background:transparent; font:inherit; text-align:left; cursor:pointer; }
-    @media (max-width:760px) {
-      .site-header__links { display:none !important; }
-      .site-header__menu-toggle { display:inline-flex !important; width:42px; height:42px; padding:9px; flex-direction:column; justify-content:center; gap:5px; border:1px solid var(--color-border); border-radius:12px; background:var(--color-surface); color:var(--color-text); cursor:pointer; }
-      .site-header__menu-toggle span { display:block; width:100%; height:2px; border-radius:99px; background:currentColor; }
-      .site-header__menu { position:absolute; top:calc(100% + 10px); right:0; width:min(300px,calc(100vw - 24px)); grid-template-columns:1fr; display:grid !important; gap:3px; padding:8px; border:1px solid var(--color-border); border-radius:16px; background:#f3f8eb; box-shadow:var(--shadow-md); z-index:100; }
-      .site-header__menu[hidden] { display:none !important; }
-      .site-header__menu > a,
-      .site-header__menu > button { display:flex !important; visibility:visible !important; opacity:1 !important; }
-      .site-header__inner { position:relative; }
-      .site-header__nav { min-height:42px; }
-    }
+    .site-header__menu-divider { height:1px; margin:6px 4px; background:var(--color-border); }
+    .logout-modal { position:fixed; inset:0; z-index:200; display:grid; place-items:center; padding:20px; }
+    .logout-modal[hidden] { display:none; }
+    .logout-modal__backdrop { position:absolute; inset:0; background:rgba(15,23,19,.42); backdrop-filter:blur(3px); }
+    .logout-modal__dialog { position:relative; width:min(420px,100%); padding:24px; border:1px solid var(--color-border); border-radius:14px; background:var(--color-surface); box-shadow:0 24px 70px rgba(16,24,20,.20); }
+    .logout-modal__icon { width:38px; height:38px; display:grid; place-items:center; border-radius:10px; background:var(--color-accent-soft); color:var(--color-accent-dark); font-weight:800; }
+    .logout-modal__dialog h2 { margin:16px 0 6px; font-size:1.2rem; letter-spacing:-.02em; }
+    .logout-modal__dialog p { margin:0; color:var(--color-text-muted); line-height:1.55; }
+    .logout-modal__actions { display:flex; justify-content:flex-end; gap:8px; margin-top:22px; }
+    .logout-modal__actions .btn { min-width:90px; }
+    @media(max-width:760px) { .site-header__inner { position:relative; } .logout-modal { padding:16px; } .logout-modal__dialog { padding:20px; } .logout-modal__actions { justify-content:stretch; } .logout-modal__actions .btn { flex:1; } }
   `;
   document.head.append(style);
 }
@@ -80,20 +78,6 @@ export function initHeader(navEl) {
 function renderNav(navEl, session) {
   navEl.textContent = "";
   const signedIn = Boolean(session?.user);
-  const desktopLinks = document.createElement("div");
-  desktopLinks.className = "site-header__links";
-  desktopLinks.append(createLink(page("index.html"), "Home"), createLink(page("shop.html"), "Shop"), createCartLink());
-
-  if (signedIn) {
-    const account = createLink(page("account.html"), "", "site-header__account-icon");
-    account.setAttribute("aria-label", "My account");
-    account.title = "My account";
-    account.innerHTML = personIcon();
-    desktopLinks.append(account);
-  } else {
-    desktopLinks.append(createLink(page("login.html"), "Log in", "site-header__auth-link"));
-    desktopLinks.append(createLink(page("signup.html"), "Create account", "btn btn-primary site-header__auth-button"));
-  }
 
   const toggle = document.createElement("button");
   toggle.type = "button";
@@ -116,17 +100,17 @@ function renderNav(navEl, session) {
   );
 
   if (signedIn) {
-    menu.append(createLink(page("account.html"), "My Account", "site-header__menu-link"), createLogoutButton());
+    menu.append(createLink(page("account.html"), "My Account", "site-header__menu-link"));
+    const divider = document.createElement("div");
+    divider.className = "site-header__menu-divider";
+    divider.setAttribute("aria-hidden", "true");
+    menu.append(divider, createLogoutButton());
   } else {
     menu.append(createLink(page("login.html"), "Log in", "site-header__menu-link"), createLink(page("signup.html"), "Create account", "btn btn-primary site-header__menu-link"));
   }
 
   menu.querySelectorAll("a").forEach((link) => {
-    link.addEventListener("click", () => {
-      menu.hidden = true;
-      toggle.setAttribute("aria-expanded", "false");
-      toggle.setAttribute("aria-label", "Open menu");
-    });
+    link.addEventListener("click", () => closeMenu(toggle, menu));
   });
 
   toggle.addEventListener("click", (event) => {
@@ -141,30 +125,73 @@ function renderNav(navEl, session) {
     document.addEventListener("click", (event) => {
       const activeToggle = navEl.querySelector(".site-header__menu-toggle");
       const activeMenu = navEl.querySelector(".site-header__menu");
-      if (activeToggle && activeMenu && !navEl.contains(event.target)) {
-        activeMenu.hidden = true;
-        activeToggle.setAttribute("aria-expanded", "false");
-        activeToggle.setAttribute("aria-label", "Open menu");
-      }
+      if (activeToggle && activeMenu && !navEl.contains(event.target)) closeMenu(activeToggle, activeMenu);
     });
     document.addEventListener("keydown", (event) => {
       if (event.key !== "Escape") return;
       const activeToggle = navEl.querySelector(".site-header__menu-toggle");
       const activeMenu = navEl.querySelector(".site-header__menu");
-      if (activeToggle && activeMenu) {
-        activeMenu.hidden = true;
-        activeToggle.setAttribute("aria-expanded", "false");
-        activeToggle.setAttribute("aria-label", "Open menu");
-      }
+      if (activeToggle && activeMenu) closeMenu(activeToggle, activeMenu);
     });
     navEl.dataset.outsideClickBound = "true";
   }
 
-  navEl.append(desktopLinks, toggle, menu);
+  navEl.append(toggle, menu);
+}
+
+function closeMenu(toggle, menu) {
+  menu.hidden = true;
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.setAttribute("aria-label", "Open menu");
 }
 
 function createLink(href, text, className = "") { const link = document.createElement("a"); link.href = href; link.textContent = text; if (className) link.className = className; return link; }
-function createCartLink(className = "") { const link = createLink(page("cart.html"), "", className ? `${className} site-header__cart-link` : "site-header__cart-link"); link.setAttribute("aria-label", "Cart"); link.title = "Cart"; link.innerHTML = `${cartIcon()}<span class="site-header__cart-label">Cart</span><span class="site-header__cart-count">${getCartItemCount()}</span>`; return link; }
-function createLogoutButton() { const button = document.createElement("button"); button.type = "button"; button.className = "site-header__menu-link site-header__logout"; button.textContent = "Log out"; button.addEventListener("click", async () => { button.disabled = true; try { await signOutCustomer(); window.location.href = page("index.html"); } catch { button.disabled = false; } }); return button; }
+function createCartLink(className = "") { const link = createLink(page("cart.html"), "Cart", className ? `${className} site-header__cart-link` : "site-header__cart-link"); link.setAttribute("aria-label", "Cart"); link.innerHTML = `${cartIcon()}<span class="site-header__cart-label">Cart</span><span class="site-header__cart-count">${getCartItemCount()}</span>`; return link; }
+function createLogoutButton() { const button = document.createElement("button"); button.type = "button"; button.className = "site-header__menu-link site-header__logout"; button.textContent = "Log out"; button.addEventListener("click", () => openLogoutModal()); return button; }
+
+function openLogoutModal() {
+  let modal = document.getElementById("beulah-logout-modal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "beulah-logout-modal";
+    modal.className = "logout-modal";
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div class="logout-modal__backdrop" data-close></div>
+      <section class="logout-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title" aria-describedby="logout-modal-copy">
+        <div class="logout-modal__icon" aria-hidden="true">↗</div>
+        <h2 id="logout-modal-title">Log out?</h2>
+        <p id="logout-modal-copy">Are you sure you want to log out of your Beulah Foods account?</p>
+        <div class="logout-modal__actions">
+          <button type="button" class="btn btn-secondary" data-cancel>Cancel</button>
+          <button type="button" class="btn btn-primary" data-confirm>Log out</button>
+        </div>
+      </section>
+    `;
+    document.body.append(modal);
+    modal.addEventListener("click", async (event) => {
+      if (event.target.closest("[data-close], [data-cancel]")) {
+        modal.hidden = true;
+        return;
+      }
+      const confirmButton = event.target.closest("[data-confirm]");
+      if (!confirmButton) return;
+      confirmButton.disabled = true;
+      confirmButton.textContent = "Logging out...";
+      try {
+        await signOutCustomer();
+        window.location.href = page("index.html");
+      } catch {
+        confirmButton.disabled = false;
+        confirmButton.textContent = "Log out";
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !modal.hidden) modal.hidden = true;
+    });
+  }
+  modal.hidden = false;
+  modal.querySelector("[data-cancel]").focus();
+}
+
 function cartIcon() { return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L20.5 8H6"/><circle cx="10" cy="19" r="1.3"/><circle cx="18" cy="19" r="1.3"/></svg>'; }
-function personIcon() { return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.7-3.3 3-5 6.5-5s5.8 1.7 6.5 5"/></svg>'; }
