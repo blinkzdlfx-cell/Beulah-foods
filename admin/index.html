@@ -5,18 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Beulah Foods — Admin</title>
   <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/admin.css" />
 </head>
 <body>
-  <main style="padding: var(--space-4); font-family: var(--font-base); color: var(--color-text);">
-    <h1>Beulah Foods Admin</h1>
-    <p>Admin scaffold — no features built yet. See FEATURES.md.</p>
-  </main>
+<div class="admin-shell">
+  <section id="admin-login" class="admin-main">
+    <div class="admin-card login-card">
+      <p class="muted">Beulah Foods administration</p>
+      <h1>Admin sign in</h1>
+      <p class="muted">Use an account explicitly provisioned in the admin authorization table.</p>
+      <div id="admin-login-alert" class="alert error" role="alert" hidden></div>
+      <form id="admin-login-form" class="stack">
+        <div class="field"><label for="admin-email">Email</label><input id="admin-email" name="email" type="email" autocomplete="username" required /></div>
+        <div class="field"><label for="admin-password">Password</label><input id="admin-password" name="password" type="password" autocomplete="current-password" required /></div>
+        <button class="btn btn-primary" type="submit">Sign in</button>
+      </form>
+    </div>
+  </section>
 
-  <script type="module">
-    import { supabase } from "./js/lib/supabaseClient.js";
-    // Smoke test only — confirms the module graph and Supabase client
-    // load correctly. Remove once real login page exists.
-    console.log("Admin scaffold loaded. Supabase client:", supabase);
-  </script>
+  <section id="admin-app" class="hidden">
+    <header class="admin-header"><div class="admin-header__inner"><div class="admin-brand">Beulah <span>Foods</span> Admin</div><div class="actions"><span id="admin-name" class="muted"></span><button id="admin-logout" class="btn btn-secondary" type="button">Log out</button></div></div></header>
+    <main class="admin-main">
+      <div id="admin-alert" class="alert" role="status" hidden></div>
+      <div class="metric-grid" style="margin-bottom:24px"><div class="metric"><span class="muted">Products</span><strong id="product-count">0</strong></div><div class="metric"><span class="muted">Active products</span><strong id="active-count">0</strong></div><div class="metric"><span class="muted">Low stock</span><strong id="low-stock-count">0</strong></div></div>
+
+      <div class="admin-grid">
+        <section class="admin-card">
+          <h2>Product catalogue</h2><p class="muted">Manage real catalogue records used by the storefront.</p>
+          <form id="product-form" class="form-grid">
+            <input id="product-id" type="hidden" name="id" />
+            <div class="field"><label for="product-name">Name</label><input id="product-name" name="name" required /></div>
+            <div class="field"><label for="product-category">Category</label><select id="product-category" name="category_id"></select></div>
+            <div class="field full"><label for="product-description">Description</label><textarea id="product-description" name="description" rows="3"></textarea></div>
+            <div class="field"><label for="product-price">Price (NGN)</label><input id="product-price" name="price" type="number" min="0" step="0.01" required /></div>
+            <div class="field"><label for="product-stock">Stock quantity</label><input id="product-stock" name="stock_quantity" type="number" min="0" step="1" required /></div>
+            <div class="field"><label for="product-image">Image URL</label><input id="product-image" name="image_url" type="url" /></div>
+            <div class="field"><label for="product-sort">Sort order</label><input id="product-sort" name="sort_order" type="number" step="1" value="0" /></div>
+            <label class="field" style="display:flex;align-items:center;gap:8px"><input id="product-active" name="is_active" type="checkbox" checked /> Active</label>
+            <div class="actions full"><button id="product-submit" class="btn btn-primary" type="submit">Save product</button><button id="cancel-product" class="btn btn-secondary" type="button">Clear</button></div>
+          </form>
+        </section>
+
+        <section class="admin-card">
+          <h2>Categories</h2><p class="muted">Create and control catalogue categories.</p>
+          <form id="category-form" class="stack" style="margin-bottom:20px"><div class="field"><label for="category-name">Name</label><input id="category-name" name="name" required /></div><div class="field"><label for="category-description">Description</label><textarea id="category-description" name="description" rows="2"></textarea></div><div class="field"><label for="category-sort">Sort order</label><input id="category-sort" name="sort_order" type="number" value="0" /></div><button class="btn btn-primary" type="submit">Save category</button></form>
+          <div class="table-wrap"><table class="table"><thead><tr><th>Name</th><th>Slug</th><th>Status</th><th></th></tr></thead><tbody id="category-rows"></tbody></table></div>
+        </section>
+      </div>
+
+      <section class="admin-card" style="margin-top:24px"><h2>Products</h2><div class="table-wrap"><table class="table"><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Available</th><th>Status</th><th></th></tr></thead><tbody id="product-rows"></tbody></table></div></section>
+    </main>
+  </section>
+</div>
+<script type="module" src="js/admin.js"></script>
 </body>
 </html>
