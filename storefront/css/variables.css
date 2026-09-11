@@ -1,0 +1,20 @@
+/* Design tokens for the storefront. See DESIGN.md — accent green, not
+   dominant green. Adjust values once real brand colors are confirmed. */
+:root {
+  --color-bg: #faf9f6;
+  --color-surface: #ffffff;
+  --color-text: #1f2320;
+  --color-text-muted: #5c635e;
+  --color-accent: #2f6b4f;   /* green, used as accent only */
+  --color-border: #e4e2dd;
+
+  --font-base: system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 40px;
+
+  --radius: 8px;
+}
