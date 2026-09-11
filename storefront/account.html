@@ -12,8 +12,13 @@
 </head>
 <body>
   <header class="site-header">
-    <a class="site-header__logo" href="index.html">Beulah Foods</a>
-    <nav id="site-header-nav" class="site-header__nav" hidden></nav>
+    <div class="site-header__inner">
+      <a class="site-header__logo-wrap" href="index.html" aria-label="Beulah Foods home">
+        <span class="site-header__mark" aria-hidden="true">B</span>
+        <span class="site-header__brand">Beulah Foods</span>
+      </a>
+      <nav id="site-header-nav" class="site-header__nav" aria-label="Main navigation" hidden></nav>
+    </div>
   </header>
 
   <main class="account-page">
@@ -27,7 +32,7 @@
       <aside class="account-summary card">
         <div class="account-avatar" id="account-avatar" aria-hidden="true">B</div>
         <div>
-          <p class="account-summary__label">Signed in as</p>
+          <p class="account-summary__label">Your account</p>
           <strong id="account-email">Loading...</strong>
         </div>
         <a class="account-summary__link" href="index.html">Continue shopping</a>
@@ -64,6 +69,7 @@
     </section>
   </main>
 
+  <script type="module" src="js/components/navbar.js"></script>
   <script type="module" src="js/pages/account.js"></script>
 </body>
 </html>
