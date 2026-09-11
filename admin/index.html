@@ -21,7 +21,28 @@
   </section>
 
   <section id="admin-app" class="hidden">
-    <header class="admin-header"><div class="admin-header__inner"><div class="admin-brand">Beulah <span>Foods</span> Admin</div><nav class="admin-nav" aria-label="Admin navigation"><a href="/admin/">Dashboard</a><a href="/admin/orders.html">Orders</a><a href="/admin/transactions.html">Transactions</a></nav><div class="actions"><span id="admin-name" class="muted"></span><button id="admin-logout" class="btn btn-secondary" type="button">Log out</button></div></div></header>
+    <header class="admin-header">
+      <div class="admin-header__inner">
+        <div class="admin-brand">Beulah <span>Foods</span> Admin</div>
+        <button id="admin-menu-toggle" class="admin-menu-toggle" type="button" aria-expanded="false" aria-controls="admin-menu" aria-label="Open admin menu">
+          <span></span><span></span><span></span>
+        </button>
+        <div id="admin-menu" class="admin-menu" hidden>
+          <div class="admin-menu__identity">
+            <span class="admin-menu__label">Signed in as</span>
+            <strong id="admin-name"></strong>
+          </div>
+          <nav class="admin-nav" aria-label="Admin navigation">
+            <a href="/admin/">Dashboard</a>
+            <a href="/admin/orders.html">Orders</a>
+            <a href="/admin/transactions.html">Transactions</a>
+          </nav>
+          <div class="admin-menu__footer">
+            <button id="admin-logout" class="admin-menu__logout" type="button">Log out</button>
+          </div>
+        </div>
+      </div>
+    </header>
     <main class="admin-main">
       <div id="admin-alert" class="alert" role="status" hidden></div>
       <div class="metric-grid" style="margin-bottom:24px"><div class="metric"><span class="muted">Products</span><strong id="product-count">0</strong></div><div class="metric"><span class="muted">Active products</span><strong id="active-count">0</strong></div><div class="metric"><span class="muted">Low stock</span><strong id="low-stock-count">0</strong></div></div>
@@ -61,5 +82,38 @@
   </section>
 </div>
 <script type="module" src="js/admin.js"></script>
+<script type="module" src="js/logout-confirm.js"></script>
+<script>
+  const toggle = document.getElementById("admin-menu-toggle");
+  const menu = document.getElementById("admin-menu");
+  if (toggle && menu) {
+    toggle.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const open = menu.hidden;
+      menu.hidden = !open;
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.setAttribute("aria-label", open ? "Close admin menu" : "Open admin menu");
+    });
+    menu.querySelectorAll("a").forEach((link) => link.addEventListener("click", () => {
+      menu.hidden = true;
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-label", "Open admin menu");
+    }));
+    document.addEventListener("click", (event) => {
+      if (!menu.hidden && !menu.contains(event.target) && !toggle.contains(event.target)) {
+        menu.hidden = true;
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.setAttribute("aria-label", "Open admin menu");
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        menu.hidden = true;
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.setAttribute("aria-label", "Open admin menu");
+      }
+    });
+  }
+</script>
 </body>
 </html>
