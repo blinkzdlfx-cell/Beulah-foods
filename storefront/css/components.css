@@ -1,38 +1,5 @@
-/* Reusable classes shared across storefront pages. Add to this file as
-   new pieces of UI recur — don't redefine the same look in page CSS. */
-
-.site-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
-}
-
-.site-header__logo {
-  font-weight: 600;
-  font-size: 1.125rem;
-  text-decoration: none;
-  color: var(--color-text);
-}
-
-.site-header__nav {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  font-size: 0.9375rem;
-}
-
 .site-header__nav[hidden] {
   display: none;
-}
-
-.card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: var(--space-4);
 }
 
 .btn {
@@ -40,31 +7,40 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius);
+  min-height: 44px;
+  padding: 10px 18px;
   border: 1px solid transparent;
-  font-size: 0.9375rem;
-  font-weight: 600;
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1;
   cursor: pointer;
   text-decoration: none;
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
 }
 
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
 .btn-primary {
   background: var(--color-accent);
   color: #ffffff;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover:not(:disabled) {
-  filter: brightness(0.94);
+  background: var(--color-accent-dark);
 }
 
 .btn-secondary {
-  background: transparent;
+  background: var(--color-surface);
   color: var(--color-text);
   border-color: var(--color-border);
 }
@@ -77,18 +53,20 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .form-field label {
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .form-field input {
-  padding: var(--space-2) var(--space-3);
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 13px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   font-size: 1rem;
   font-family: var(--font-base);
   color: var(--color-text);
@@ -96,8 +74,8 @@
 }
 
 .form-field input:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 1px;
+  outline: 3px solid rgba(47, 107, 79, 0.16);
+  border-color: var(--color-accent);
 }
 
 .form-field small {
@@ -106,10 +84,10 @@
 }
 
 .alert {
-  padding: var(--space-3);
-  border-radius: var(--radius);
-  font-size: 0.9375rem;
-  margin-bottom: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  margin-bottom: var(--space-4);
 }
 
 .alert-success {
