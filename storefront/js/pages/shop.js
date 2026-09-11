@@ -33,7 +33,7 @@ function renderCategories() {
     label.innerHTML = `<input type="radio" name="category" value="${escapeAttribute(category.slug)}"><span>${escapeHtml(category.name)}</span>`;
     categoryList.append(label);
   }
-  categoryList.addEventListener("change", () => { currentPage = 1; loadProducts(); });
+  categoryList.onchange = () => { currentPage = 1; loadProducts(); };
 }
 
 function renderProducts(products) {
@@ -44,8 +44,10 @@ function renderProducts(products) {
     card.className = "product-card";
     const detailUrl = `product.html?slug=${encodeURIComponent(product.slug)}`;
     const inStock = Number(product.stock_quantity) > 0;
-    const image = product.image_src ? `<img class="product-card__image" src="${escapeAttribute(product.image_src)}" alt="${escapeAttribute(product.name)}" loading="lazy">` : '<span class="product-card__image-slot" aria-hidden="true"></span>';
-    card.innerHTML = `<a class="product-card__media" href="${detailUrl}" aria-label="View ${escapeAttribute(product.name)}">${image}</a><div class="product-card__body"><p class="product-card__availability ${inStock ? "" : "is-unavailable"}">${inStock ? "Available" : "Currently unavailable"}</p><h2><a href="${detailUrl}">${escapeHtml(product.name)}</a></h2><p class="product-card__description">${escapeHtml(product.description ?? "")}</p><div class="product-card__footer"><strong>${naira.format(Number(product.price))}</strong><button class="btn btn-primary product-card__add" type="button" data-product-id="${escapeAttribute(product.id)}" ${inStock ? "" : "disabled"}>${inStock ? "Add to cart" : "Unavailable"}</button></div></div>`;
+    const media = product.image_src
+      ? `<a class="product-card__media" href="${detailUrl}" aria-label="View ${escapeAttribute(product.name)}"><img class="product-card__image" src="${escapeAttribute(product.image_src)}" alt="${escapeAttribute(product.name)}" loading="lazy"></a>`
+      : "";
+    card.innerHTML = `${media}<div class="product-card__body"><p class="product-card__availability ${inStock ? "" : "is-unavailable"}">${inStock ? "Available" : "Currently unavailable"}</p><h2><a href="${detailUrl}">${escapeHtml(product.name)}</a></h2><p class="product-card__description">${escapeHtml(product.description ?? "")}</p><div class="product-card__footer"><strong>${naira.format(Number(product.price))}</strong><button class="btn btn-primary product-card__add" type="button" data-product-id="${escapeAttribute(product.id)}" ${inStock ? "" : "disabled"}>${inStock ? "Add to cart" : "Unavailable"}</button></div></div>`;
     card.querySelector(".product-card__add")?.addEventListener("click", () => { addToCart(product.id, 1); setStatus(`${product.name} added to your cart.`, "success"); });
     grid.append(card);
   }
