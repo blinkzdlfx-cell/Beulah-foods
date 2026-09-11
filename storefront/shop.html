@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/storefront/" />
+  <title>Shop — Beulah Foods</title>
+  <meta name="description" content="Shop Beulah Foods products." />
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/shop.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="site-header__logo-wrap" href="index.html" aria-label="Beulah Foods home">
+        <span class="site-header__mark" aria-hidden="true">B</span>
+        <span class="site-header__brand">Beulah Foods</span>
+      </a>
+      <nav id="site-header-nav" class="site-header__nav" aria-label="Main navigation" hidden></nav>
+    </div>
+  </header>
+
+  <main class="shop-page">
+    <section class="shop-heading">
+      <p class="eyebrow">Beulah Foods · Lagos, Nigeria</p>
+      <h1>Shop our products.</h1>
+      <p>Our real product catalogue will appear here as products are connected to the Beulah Foods backend.</p>
+    </section>
+
+    <section class="shop-empty card" aria-live="polite">
+      <span class="shop-empty__mark" aria-hidden="true">B</span>
+      <h2>The shop is being prepared.</h2>
+      <p>Products, categories, pricing and availability will load from the live catalogue. No placeholder products are shown.</p>
+      <a class="btn btn-primary" href="index.html">Back home</a>
+    </section>
+  </main>
+
+  <script type="module" src="js/pages/shop.js"></script>
+</body>
+</html>
