@@ -1,0 +1,455 @@
+/* Beulah Foods UI system — Supabase-inspired, not a copy. */
+
+:root {
+  --color-bg: #f8faf9;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f4f7f5;
+  --color-surface-raised: #ffffff;
+  --color-text: #1c211e;
+  --color-text-muted: #66706a;
+  --color-text-subtle: #87908a;
+
+  /* Supabase-inspired primary: green is the product action color. */
+  --color-accent: #3ecf8e;
+  --color-accent-dark: #2fbf80;
+  --color-accent-soft: rgba(62, 207, 142, 0.12);
+  --color-accent-strong-soft: rgba(62, 207, 142, 0.18);
+  --color-accent-ink: #07351f;
+
+  /* Secondary highlight only; never used as the primary action color. */
+  --color-gold: #fcc203;
+  --color-gold-soft: rgba(252, 194, 3, 0.10);
+
+  --color-border: #dfe5e1;
+  --color-border-strong: #c9d3cc;
+  --color-control: #ffffff;
+  --color-danger: #a63d35;
+
+  --shadow-sm: 0 1px 2px rgba(16, 24, 20, 0.045);
+  --shadow-md: 0 8px 24px rgba(16, 24, 20, 0.07);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+::selection {
+  background: rgba(62, 207, 142, 0.24);
+  color: var(--color-accent-ink);
+}
+
+/* Navigation: quiet, bordered, compact. */
+.site-header {
+  background: rgba(255, 255, 255, 0.97);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: none;
+}
+
+.site-header__inner {
+  width: min(1200px, calc(100% - 40px));
+  min-height: 72px;
+}
+
+.site-header__links a:not(.btn) {
+  color: var(--color-text-muted);
+  border-radius: 7px;
+}
+
+.site-header__links a:not(.btn):hover,
+.site-header__links a[aria-current="page"]:not(.btn) {
+  background: var(--color-surface-subtle);
+  color: var(--color-text);
+}
+
+.site-header__cart-link,
+.site-header__account-icon {
+  border-color: var(--color-border) !important;
+  border-radius: 7px !important;
+  background: var(--color-surface) !important;
+}
+
+.site-header__cart-link:hover,
+.site-header__account-icon:hover {
+  background: var(--color-surface-subtle) !important;
+  border-color: var(--color-border-strong) !important;
+}
+
+.site-header__cart-count {
+  background: var(--color-accent) !important;
+  color: var(--color-accent-ink) !important;
+  border: 2px solid #fff;
+}
+
+/* Actions: green is reserved for the primary action. */
+.btn {
+  min-height: 42px;
+  padding: 10px 15px;
+  border-radius: 7px;
+  box-shadow: none;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  border-color: var(--color-accent);
+  box-shadow: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-accent-dark);
+  color: #052b19;
+  border-color: var(--color-accent-dark);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-border-strong);
+}
+
+.btn-light {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  border-color: var(--color-accent);
+}
+
+.btn-light:hover:not(:disabled) {
+  background: var(--color-accent-dark);
+  color: #052b19;
+}
+
+/* Shared card language: border first, shadow second, no decorative effects. */
+.card,
+.feature-card,
+.product-card,
+.shop-empty,
+.cart-item,
+.cart-summary,
+.checkout-card,
+.account-summary,
+.account-form-card,
+.shop-filters,
+.product-detail__media {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.feature-card:hover,
+.product-card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Forms and controls use the same surface/border hierarchy. */
+.form-field input,
+.form-field textarea,
+.form-field select,
+.quantity-control input {
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-control);
+  box-shadow: none;
+}
+
+.form-field input:focus-visible,
+.form-field textarea:focus-visible,
+.form-field select:focus-visible,
+.quantity-control input:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid rgba(62, 207, 142, 0.38);
+  outline-offset: 2px;
+}
+
+/* Page structure: predictable container widths and quiet section boundaries. */
+.hero,
+.section,
+.shop-page,
+.product-page,
+.cart-page,
+.checkout-page,
+.account-page {
+  position: relative;
+}
+
+.hero {
+  padding: 76px 0 88px;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.hero__grid,
+.section__inner,
+.footer__inner {
+  width: min(1200px, calc(100% - 40px));
+}
+
+.hero__grid {
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.78fr);
+  gap: 56px;
+}
+
+.hero h1 {
+  max-width: 720px;
+  font-size: clamp(3.4rem, 6vw, 6rem);
+  line-height: 0.94;
+  letter-spacing: -0.065em;
+}
+
+.hero h1 span {
+  color: var(--color-accent-dark);
+}
+
+.eyebrow {
+  color: #278a61;
+  letter-spacing: 0.12em;
+}
+
+.eyebrow::before {
+  width: 22px;
+  height: 2px;
+  background: var(--color-accent);
+}
+
+.hero__copy {
+  max-width: 600px;
+  color: var(--color-text-muted);
+  font-size: 1.03rem;
+  line-height: 1.8;
+}
+
+.hero-card {
+  width: min(100%, 470px);
+  aspect-ratio: 1;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  transform: none;
+}
+
+.hero-card__overlay {
+  background: linear-gradient(180deg, transparent 62%, rgba(20, 30, 22, 0.12));
+}
+
+.section {
+  padding: 80px 0;
+}
+
+.section--soft {
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.section__heading {
+  margin-bottom: 32px;
+}
+
+.feature-grid,
+.product-grid {
+  gap: 14px;
+}
+
+.feature-card {
+  min-height: 220px;
+  padding: 24px;
+}
+
+.feature-card__number {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 28px;
+  border-radius: 7px;
+  background: var(--color-accent-soft);
+  color: #16764e;
+  border: 1px solid rgba(62, 207, 142, 0.24);
+}
+
+.story {
+  gap: 64px;
+}
+
+.story__copy {
+  color: var(--color-text-muted);
+  line-height: 1.85;
+}
+
+.cta {
+  padding: 72px 0;
+}
+
+.cta__box {
+  padding: 48px 36px;
+  border-radius: 12px;
+  background: #18231d;
+  border: 1px solid #2b3931;
+  box-shadow: var(--shadow-md);
+}
+
+.cta__box .eyebrow {
+  color: var(--color-accent);
+}
+
+.site-footer {
+  padding: 40px 0;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Auth uses a green brand panel, but keeps the same restrained surfaces. */
+.auth-page {
+  background: var(--color-bg);
+}
+
+.auth-shell {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+}
+
+.auth-intro {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+.auth-intro__brand,
+.auth-intro h1 {
+  color: var(--color-accent-ink);
+}
+
+.auth-intro p {
+  color: rgba(7, 53, 31, 0.72);
+}
+
+.auth-card {
+  background: var(--color-surface);
+}
+
+/* Store pages: page header, filter row, content grid, detail surface. */
+.shop-page,
+.product-page,
+.cart-page,
+.checkout-page,
+.account-page {
+  width: min(1200px, calc(100% - 40px));
+  padding-top: 64px;
+  padding-bottom: 96px;
+}
+
+.shop-heading,
+.checkout-heading,
+.cart-heading,
+.page-heading {
+  max-width: 760px;
+}
+
+.shop-toolbar {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.shop-filters {
+  box-shadow: var(--shadow-sm);
+}
+
+.product-card__media,
+.cart-item__media,
+.product-detail__media {
+  background: var(--color-surface-subtle);
+}
+
+.product-card__body {
+  padding: 18px;
+}
+
+.product-card__availability,
+.product-detail__price,
+.product-detail__stock {
+  color: #278a61;
+}
+
+.product-card h2 a:hover {
+  color: #278a61;
+}
+
+.product-detail__media {
+  box-shadow: var(--shadow-sm);
+}
+
+.cart-summary,
+.checkout-card,
+.account-summary,
+.account-form-card {
+  box-shadow: var(--shadow-sm);
+}
+
+.checkout-auth-notice {
+  border-color: rgba(62, 207, 142, 0.30);
+  background: var(--color-accent-soft);
+}
+
+.account-avatar {
+  background-color: var(--color-accent-soft);
+  color: #278a61;
+}
+
+.account-detail {
+  border-color: var(--color-border);
+  background: var(--color-surface-subtle);
+}
+
+@media (max-width: 820px) {
+  .hero {
+    padding: 58px 0 70px;
+  }
+
+  .hero__grid {
+    grid-template-columns: 1fr;
+    gap: 42px;
+  }
+}
+
+@media (max-width: 620px) {
+  .site-header__inner,
+  .hero__grid,
+  .section__inner,
+  .footer__inner,
+  .shop-page,
+  .product-page,
+  .cart-page,
+  .checkout-page,
+  .account-page {
+    width: min(100% - 24px, 1200px);
+  }
+
+  .site-header__inner {
+    min-height: 66px;
+  }
+
+  .hero h1 {
+    font-size: clamp(3.05rem, 15vw, 4.5rem);
+  }
+
+  .section {
+    padding: 64px 0;
+  }
+
+  .feature-card {
+    min-height: 200px;
+  }
+
+  .cta__box {
+    padding: 40px 22px;
+  }
+}
