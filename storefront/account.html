@@ -26,7 +26,7 @@
     <section class="page-heading">
       <p class="eyebrow">My account</p>
       <h1>Your details, your way.</h1>
-      <p>Manage your contact and delivery details so every order starts smoothly.</p>
+      <p>Keep your contact and delivery details ready for a smoother Beulah Foods order.</p>
     </section>
 
     <section class="account-layout" aria-label="Account details">
@@ -50,10 +50,29 @@
 
         <div id="account-alert" class="alert" role="status" aria-live="polite" hidden></div>
 
-        <form id="account-form" novalidate>
+        <div id="account-view" class="account-view" aria-live="polite">
+          <div class="account-detail">
+            <span class="account-detail__label">Full name</span>
+            <strong id="view-full-name">Not added yet</strong>
+          </div>
+          <div class="account-detail">
+            <span class="account-detail__label">Email address</span>
+            <strong id="view-email">Loading...</strong>
+          </div>
+          <div class="account-detail">
+            <span class="account-detail__label">Phone number</span>
+            <strong id="view-phone">Not added yet</strong>
+          </div>
+          <div class="account-detail account-detail--address">
+            <span class="account-detail__label">Delivery address</span>
+            <strong id="view-address">Not added yet</strong>
+          </div>
+        </div>
+
+        <form id="account-form" class="account-edit-form" novalidate hidden>
           <div class="form-field">
             <label for="full-name">Full name</label>
-            <input id="full-name" name="fullName" type="text" autocomplete="name" required disabled />
+            <input id="full-name" name="fullName" type="text" autocomplete="name" required />
           </div>
 
           <div class="form-field">
@@ -64,16 +83,16 @@
 
           <div class="form-field">
             <label for="phone">Phone number</label>
-            <input id="phone" name="phone" type="tel" autocomplete="tel" disabled />
+            <input id="phone" name="phone" type="tel" autocomplete="tel" />
           </div>
 
           <div class="form-field">
             <label for="address">Delivery address</label>
-            <textarea id="address" name="address" rows="4" autocomplete="street-address" disabled></textarea>
+            <textarea id="address" name="address" rows="4" autocomplete="street-address"></textarea>
           </div>
 
           <div class="account-form-actions">
-            <button class="btn btn-secondary" type="button" id="cancel-edit" hidden>Cancel</button>
+            <button class="btn btn-secondary" type="button" id="cancel-edit">Cancel</button>
             <button class="btn btn-primary" type="submit" id="save-profile" hidden>Save changes</button>
           </div>
         </form>
