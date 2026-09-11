@@ -77,9 +77,16 @@ export default {
 };
 
 async function handlePaystackInitialize(request, env, url) {
+  const bindings = {
+    supabase_url: Boolean(env.SUPABASE_URL),
+    supabase_service_role_key: Boolean(env.SUPABASE_SERVICE_ROLE_KEY),
+    paystack_secret_key: Boolean(env.PAYSTACK_SECRET_KEY),
+  };
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY || !env.PAYSTACK_SECRET_KEY) {
+    logPaymentEvent("initialize_not_configured", { bindings });
     return json({ error: "PAYMENT_SERVER_NOT_CONFIGURED" }, 503);
   }
+  logPaymentEvent("initialize_request", { bindings });
   const auth = getBearerToken(request);
   if (!auth) return json({ error: "AUTH_REQUIRED" }, 401);
 
@@ -121,6 +128,7 @@ async function handlePaystackInitialize(request, env, url) {
   });
   const paystack = await safeJson(paystackResponse);
   if (!paystackResponse.ok || !paystack?.status || !paystack?.data?.authorization_url) {
+    logPaymentEvent("initialize_paystack_failed", { order_id: order.id, http_status: paystackResponse.status, provider_message: paystack?.message || null });
     return json({ error: "PAYMENT_INITIALIZATION_FAILED", detail: paystack?.message || null }, 502);
   }
 
@@ -130,11 +138,20 @@ async function handlePaystackInitialize(request, env, url) {
     body: JSON.stringify({ provider_reference: paystack.data.reference, raw_response: paystack.data, updated_at: new Date().toISOString() }),
   });
 
+  logPaymentEvent("initialize_success", { order_id: order.id, paystack_http_status: paystackResponse.status, reservation_expires_at: reservation.expires_at });
   return json({ authorization_url: paystack.data.authorization_url, reference: paystack.data.reference, access_code: paystack.data.access_code, reservation_expires_at: reservation.expires_at });
 }
 
 async function handlePaystackVerify(request, env, url) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY || !env.PAYSTACK_SECRET_KEY) return json({ error: "PAYMENT_SERVER_NOT_CONFIGURED" }, 503);
+  const bindings = {
+    supabase_url: Boolean(env.SUPABASE_URL),
+    supabase_service_role_key: Boolean(env.SUPABASE_SERVICE_ROLE_KEY),
+    paystack_secret_key: Boolean(env.PAYSTACK_SECRET_KEY),
+  };
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY || !env.PAYSTACK_SECRET_KEY) {
+    logPaymentEvent("verify_not_configured", { bindings });
+    return json({ error: "PAYMENT_SERVER_NOT_CONFIGURED" }, 503);
+  }
   const auth = getBearerToken(request);
   if (!auth) return json({ error: "AUTH_REQUIRED" }, 401);
   const user = await getSupabaseUser(env, auth);
@@ -153,13 +170,17 @@ async function handlePaystackVerify(request, env, url) {
     headers: { Authorization: `Bearer ${env.PAYSTACK_SECRET_KEY}` },
   });
   const verified = await safeJson(verifyResponse);
-  if (!verifyResponse.ok || !verified?.status) return json({ error: "PAYMENT_VERIFICATION_FAILED" }, 502);
+  if (!verifyResponse.ok || !verified?.status) {
+    logPaymentEvent("verify_paystack_failed", { order_id: order.id, http_status: verifyResponse.status });
+    return json({ error: "PAYMENT_VERIFICATION_FAILED" }, 502);
+  }
 
   const transaction = verified.data;
   const providerStatus = String(transaction?.status || "").toLowerCase();
   const amountKobo = Number(transaction?.amount);
   if (!Number.isFinite(amountKobo)) return json({ error: "PAYMENT_AMOUNT_INVALID" }, 502);
 
+  logPaymentEvent("verify_provider_status", { order_id: order.id, provider_status: providerStatus, http_status: verifyResponse.status });
   if (providerStatus === "success") {
     const result = await finalizePayment(env, reference, "success", amountKobo, verified, transaction?.paid_at || null);
     await sendOrderEmails(env, order.id, reference);
@@ -180,7 +201,15 @@ async function handlePaystackVerify(request, env, url) {
 }
 
 async function handlePaystackWebhook(request, env) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY || !env.PAYSTACK_SECRET_KEY) return new Response("Not configured", { status: 503 });
+  const bindings = {
+    supabase_url: Boolean(env.SUPABASE_URL),
+    supabase_service_role_key: Boolean(env.SUPABASE_SERVICE_ROLE_KEY),
+    paystack_secret_key: Boolean(env.PAYSTACK_SECRET_KEY),
+  };
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY || !env.PAYSTACK_SECRET_KEY) {
+    logPaymentEvent("webhook_not_configured", { bindings });
+    return new Response("Not configured", { status: 503 });
+  }
   const rawBody = await request.text();
   const signature = request.headers.get("x-paystack-signature");
   if (!signature || !(await verifyHmacSha512(rawBody, env.PAYSTACK_SECRET_KEY, signature))) return new Response("Unauthorized", { status: 401 });
@@ -193,6 +222,7 @@ async function handlePaystackWebhook(request, env) {
   const reference = String(transaction.reference || "");
   if (!reference) return new Response("OK", { status: 200 });
   const status = event.event === "charge.success" ? "success" : "failed";
+  logPaymentEvent("webhook_event", { event: event.event, reference_present: Boolean(reference) });
   try {
     const result = await finalizePayment(env, reference, status, Number(transaction.amount), event, transaction.paid_at || null);
     if (status === "success" && result?.order_id) await sendOrderEmails(env, result.order_id, reference);
@@ -212,9 +242,10 @@ async function finalizePayment(env, reference, status, amountKobo, rawResponse, 
     target_paid_at: paidAt,
   });
   if (!response.ok) {
-    const detail = await safeJson(response);
+    const detail = response.data;
     throw new Error(detail?.message || "Payment finalization failed");
   }
+  logPaymentEvent("payment_finalized", { status, reference_present: Boolean(reference), amount_kobo: Math.round(amountKobo) });
   return response.data;
 }
 
@@ -274,3 +305,4 @@ function json(data, status = 200) { return new Response(JSON.stringify(data), { 
 async function safeJson(response) { try { return await response.json(); } catch { return null; } }
 function formatNaira(value) { return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 }).format(Number(value) || 0); }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character])); }
+function logPaymentEvent(event, details = {}) { console.log(JSON.stringify({ scope: "payment", event, timestamp: new Date().toISOString(), ...details })); }
