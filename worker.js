@@ -1,4 +1,18 @@
 const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
+const STOREFRONT_PAGES = new Set([
+  "login",
+  "signup",
+  "forgot-password",
+  "reset-password",
+  "account",
+  "shop",
+  "product",
+  "cart",
+  "checkout",
+  "orders",
+  "order",
+  "payment-callback",
+]);
 
 export default {
   async fetch(request, env) {
@@ -33,6 +47,15 @@ export default {
     if (url.pathname === "/") {
       const storefrontUrl = new URL(request.url);
       storefrontUrl.pathname = "/storefront/index.html";
+      return env.ASSETS.fetch(new Request(storefrontUrl, request));
+    }
+
+    // Support both /login and /login.html style public URLs. This keeps
+    // manually entered/bookmarked clean URLs from falling through to 404.
+    const cleanPath = url.pathname.replace(/^\//, "");
+    if (STOREFRONT_PAGES.has(cleanPath)) {
+      const storefrontUrl = new URL(request.url);
+      storefrontUrl.pathname = `/storefront/${cleanPath}.html`;
       return env.ASSETS.fetch(new Request(storefrontUrl, request));
     }
 
@@ -71,7 +94,7 @@ async function handlePaystackInitialize(request, env, url) {
   if (!payment || payment.status !== "pending") return json({ error: "PAYMENT_NOT_AVAILABLE" }, 409);
 
   const reference = `BEULAH-${orderId}-${Date.now()}`;
-  const callbackUrl = `${url.origin}/payment-callback.html?reference=${encodeURIComponent(reference)}`;
+  const callbackUrl = `${url.origin}/payment-callback?reference=${encodeURIComponent(reference)}`;
   const amountKobo = Math.round(Number(order.total) * 100);
   const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
     method: "POST",
