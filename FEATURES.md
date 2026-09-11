@@ -90,7 +90,7 @@ This file reflects the current repository state. Live-provider features remain i
 - ⬜ Full delivery information view
 - ⬜ Full order-item detail view
 - 🟨 View payment status
-- ⬜ Manage operational order status
+- ✅ Manage operational order status through trusted database function
 
 ## Admin — Payments / Transactions
 - 🟨 View payment records
