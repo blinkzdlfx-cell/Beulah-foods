@@ -7,6 +7,11 @@ const list = document.getElementById("cart-list"), empty = document.getElementBy
 const naira = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 });
 function setStatus(message, type = "") { status.textContent = message; status.className = `cart-status${type ? ` cart-status--${type}` : ""}`; status.hidden = !message; }
 function escapeHtml(value) { return String(value).replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character])); }
+function setQuantity(productId, quantity, max) {
+  const nextQuantity = Math.max(1, Math.min(max, Number(quantity) || 1));
+  updateCartQuantity(productId, nextQuantity);
+  render();
+}
 async function render() {
   setStatus("Loading cart...");
   try {
@@ -35,8 +40,12 @@ async function render() {
       const media = product.image_src
         ? `<a class="cart-item__media" href="product.html?slug=${encodeURIComponent(product.slug)}"><img src="${escapeHtml(product.image_src)}" alt="${escapeHtml(product.name)}"></a>`
         : "";
-      row.innerHTML = `${media}<div class="cart-item__content"><div><p class="eyebrow">Beulah Foods</p><h2><a href="product.html?slug=${encodeURIComponent(product.slug)}">${escapeHtml(product.name)}</a></h2><strong>${naira.format(Number(product.price))}</strong></div><div class="cart-item__controls"><label>Quantity <input class="cart-quantity" type="number" min="1" max="${max}" value="${quantity}" data-product-id="${escapeHtml(product.id)}"></label><button class="text-button cart-remove" type="button" data-product-id="${escapeHtml(product.id)}">Remove</button></div></div>`;
-      row.querySelector(".cart-quantity").addEventListener("change", (event) => { updateCartQuantity(product.id, event.target.value); render(); });
+      row.innerHTML = `<div class="cart-item__media-wrap">${media}</div><div class="cart-item__content"><div><p class="eyebrow">Beulah Foods</p><h2><a href="product.html?slug=${encodeURIComponent(product.slug)}">${escapeHtml(product.name)}</a></h2><strong>${naira.format(Number(product.price))}</strong></div><div class="cart-item__controls"><div class="cart-quantity-control" role="group" aria-label="Quantity for ${escapeHtml(product.name)}"><button class="cart-quantity-button cart-quantity-button--minus" type="button" data-product-id="${escapeHtml(product.id)}" aria-label="Decrease quantity"${quantity <= 1 ? " disabled" : ""}>−</button><input class="cart-quantity" type="number" min="1" max="${max}" value="${quantity}" data-product-id="${escapeHtml(product.id)}" aria-label="Quantity"><button class="cart-quantity-button cart-quantity-button--plus" type="button" data-product-id="${escapeHtml(product.id)}" aria-label="Increase quantity"${quantity >= max ? " disabled" : ""}>+</button></div><button class="text-button cart-remove" type="button" data-product-id="${escapeHtml(product.id)}">Remove</button></div></div>`;
+
+      const input = row.querySelector(".cart-quantity");
+      row.querySelector(".cart-quantity-button--minus").addEventListener("click", () => setQuantity(product.id, Number(input.value) - 1, max));
+      row.querySelector(".cart-quantity-button--plus").addEventListener("click", () => setQuantity(product.id, Number(input.value) + 1, max));
+      input.addEventListener("change", (event) => setQuantity(product.id, event.target.value, max));
       row.querySelector(".cart-remove").addEventListener("click", () => { removeFromCart(product.id); render(); });
       list.append(row);
     }
