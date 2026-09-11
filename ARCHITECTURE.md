@@ -8,93 +8,87 @@ Use only:
 - Normal CSS (with CSS variables and reusable classes)
 - Vanilla JavaScript (ES modules are allowed)
 - Supabase (auth, database, storage — the backend source of truth)
+- Cloudflare Worker for the small privileged server boundary required by Paystack/Resend
 
 Do **not** introduce React, Next.js, Vue, Angular, Tailwind, Bootstrap,
 Vite, Webpack, unnecessary npm packages, SPA routing, or hash routing.
-
-ES modules (`import`/`export` in the browser) are fine to use — that's a
-browser feature, not a build tool. It does not mean adding npm or a
-bundler.
-
-## Why this stack
-
-The project needs to be editable from many different tools (see
-`PROJECT.md`), and none of those environments can be relied on to run a
-consistent build pipeline. Plain static files sidestep that problem
-entirely — any of them can open an HTML file and run a script.
 
 ## How the pieces fit together
 
 ```
 beulah-foods/
-├── storefront/     ← customer-facing site (physically separate from admin)
-├── admin/          ← staff dashboard (physically separate from storefront)
-└── supabase/       ← notes and (later) SQL for the Supabase project
+├── storefront/     ← customer-facing site
+├── admin/          ← staff dashboard
+├── supabase/       ← SQL migrations
+└── worker.js       ← Cloudflare static asset worker + privileged payment/email API boundary
 ```
 
-- **Storefront and admin are physically separate.** Different folders,
-  different HTML pages, their own CSS and JS. They are not two views of
-  one app — someone should be able to delete one folder and the other
-  still works.
-- **Normal page navigation.** Every screen is its own `.html` file.
-  Clicking a link loads a new page the normal way. No client-side router,
-  no single-page app.
-- **JavaScript is organized by responsibility**, inside each area:
-  - `js/lib/` — low-level setup (e.g. the Supabase client)
-  - `js/services/` — talks to Supabase (fetching products, placing
-    orders, etc.) — this is the only layer that should call Supabase
-    directly
-  - `js/components/` — small reusable UI pieces (navbar, footer, product
-    card)
-  - `js/pages/` — the logic for one specific page, wires services and
-    components together
-  - `js/utils/` — small stateless helpers (currency formatting, form
-    validation, etc.)
-
-This mirrors the same shape in `/storefront` and `/admin` on purpose —
-once you understand one, you understand the other. It is **not** shared
-code between them; each area has its own copy of this structure.
+Storefront and admin are physically separate. Every screen remains a normal HTML page. There is no SPA router or hash routing.
 
 ## Supabase's role
 
-Supabase is the backend. It is the source of truth for:
+Supabase is the backend source of truth for:
 
-- Authentication (customer accounts and admin accounts)
-- The database (products, orders, categories, promo codes, etc.)
-- File storage (product images)
+- Authentication
+- Products/categories
+- Orders/order items
+- Reservations
+- Payments
+- Delivery settings
+- Promo codes
+- Product image storage
 
-### The two Supabase keys — and why this matters
+The browser uses only the Supabase anon/public key. RLS and trusted database functions enforce authorization and checkout rules.
 
-Supabase gives you two different keys:
+## Supabase keys
 
-- **Anon / public key** — safe to put in browser code. Supabase's
-  Row Level Security (database rules) is what actually keeps data safe,
-  not hiding this key.
-- **Service role key** — this bypasses all security rules. It must
-  **never** appear in any file inside `/storefront` or `/admin`, and
-  never be committed to the repo. If a feature seems to need it in the
-  browser, that's a sign the feature needs a server-side piece instead
-  (see below) — stop and flag it rather than exposing the key.
+- **Anon/public key:** allowed in browser code; RLS must protect data.
+- **Service-role key:** never place in `/storefront`, `/admin`, GitHub, or any client bundle. It is used only as a Cloudflare Worker secret for trusted server operations.
 
-### Where privileged logic runs
+## Trusted checkout boundary
 
-Some things must never be decided by the browser alone — for example,
-the final checkout total, and whether a payment actually succeeded. Since
-this stack has no separate Node/Express-style backend server, that
-server-side logic needs to live in **Supabase Edge Functions** (or
-database-level logic such as Postgres functions/RLS policies), not in
-client-side JavaScript.
+`create_pending_order` runs inside Postgres and is authoritative for:
 
-This is an architectural decision made to satisfy the "must not rely
-solely on client-side JavaScript" rule in `RULES.md` without introducing
-a separate backend framework, which is not allowed. It still needs a
-human decision on exactly which Edge Functions are needed and how they're
-deployed — flagged in the First Task report.
+- live product price
+- live stock
+- order-item snapshots
+- delivery fee
+- free-delivery threshold
+- promo validation/calculation
+- order total
+- stock reservation
+- pending Paystack payment creation
+
+The browser may request an order, but it cannot supply the final monetary truth.
+
+## Cloudflare Worker privileged boundary
+
+`worker.js` handles:
+
+- Paystack transaction initialization using the secret key
+- Paystack webhook signature verification
+- Paystack server-side transaction verification
+- trusted payment-finalization RPC calls
+- Resend transactional order emails
+
+The Worker validates authenticated customer ownership before initializing/verifying a transaction. Payment status is never changed by a browser request.
+
+## Product images
+
+Admin uploads product images directly to the Supabase Storage bucket `product-images`. The database stores the Storage path in the product image field. Storefront code resolves that path into a public Storage URL.
+
+Static brand assets such as the logo and favicon remain in `storefront/assets/`.
+
+## Reservation lifecycle
+
+Checkout creates a 15-minute reservation. `release_expired_reservations()` restores stock and cancels unpaid orders after expiry. Migration `0008` schedules this function through `pg_cron` every five minutes.
+
+Successful Paystack payment changes the payment/order to successful/paid and confirms the reservation. Failed payment releases the reservation and restores stock.
 
 ## What NOT to do
 
-- Don't add an abstraction layer "for later." Build what the current
-  feature needs.
-- Don't let storefront and admin import each other's page logic.
-- Don't reach for a new dependency before checking if plain HTML/CSS/JS
-  can do it.
+- Do not expose service-role, Paystack secret, or Resend API keys.
+- Do not trust payment redirect success as proof of payment.
+- Do not calculate final checkout totals only in browser code.
+- Do not paste product image URLs into admin product records; use the Storage upload flow.
+- Do not add an abstraction layer or framework without an approved reason.
