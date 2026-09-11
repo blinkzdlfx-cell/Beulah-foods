@@ -23,12 +23,19 @@ const profileMissing = document.getElementById("checkout-profile-missing");
 const fullNameEl = document.getElementById("checkout-full-name");
 const phoneEl = document.getElementById("checkout-phone");
 const addressEl = document.getElementById("checkout-address");
+const reservationBox = document.getElementById("checkout-reservation");
+const reservationOrder = document.getElementById("checkout-reservation-order");
+const reservationCountdown = document.getElementById("checkout-reservation-countdown");
+const reservationMessage = document.getElementById("checkout-reservation-message");
+const promoInput = document.getElementById("promo-code");
 const naira = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 });
 let checkoutItems = [];
 let deliverySettings = null;
 let pendingOrderId = null;
+let pendingReservation = null;
 let currentSession = null;
 let customerProfile = null;
+let reservationTimer = null;
 
 function setStatus(message, type = "") {
   status.textContent = message;
@@ -54,7 +61,7 @@ function renderProfile(profile) {
   const complete = hasCompleteDeliveryProfile(customerProfile);
   profileCard.hidden = !complete;
   profileMissing.hidden = complete;
-  submit.disabled = !complete;
+  submit.disabled = !complete || reservationExpired();
 
   fullNameEl.textContent = customerProfile?.full_name?.trim() || "—";
   phoneEl.textContent = customerProfile?.phone?.trim() || "—";
@@ -62,7 +69,7 @@ function renderProfile(profile) {
 
   if (!complete) {
     setStatus("Add your delivery details in My Account before continuing.", "error");
-  } else {
+  } else if (!pendingReservation) {
     setStatus("");
   }
 }
@@ -76,6 +83,22 @@ async function init() {
     return;
   }
 
+  const [profile, pending] = await Promise.all([
+    getCustomerProfile(),
+    findActivePendingOrder(),
+  ]);
+
+  if (pending) {
+    pendingOrderId = pending.order.id;
+    pendingReservation = pending.reservation;
+    checkoutItems = pending.items;
+    renderPendingOrder(pending.order);
+    renderProfile(profile);
+    startReservationCountdown();
+    form.hidden = false;
+    return;
+  }
+
   const cart = getCart();
   if (!cart.length) {
     setStatus("Your cart is empty. Add products before checking out.", "error");
@@ -83,8 +106,7 @@ async function init() {
     return;
   }
 
-  const [profile, products, deliveryResult] = await Promise.all([
-    getCustomerProfile(),
+  const [products, deliveryResult] = await Promise.all([
     getProductsByIds(cart.map((item) => item.productId)),
     supabase
       .from("delivery_settings")
@@ -111,8 +133,103 @@ async function init() {
 
   renderSummary();
   renderProfile(profile);
-
   form.hidden = false;
+}
+
+async function findActivePendingOrder() {
+  const now = new Date().toISOString();
+  const { data: reservations, error: reservationError } = await supabase
+    .from("reservations")
+    .select("id,order_id,expires_at")
+    .eq("status", "active")
+    .gt("expires_at", now)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (reservationError) throw reservationError;
+  const reservation = reservations?.[0];
+  if (!reservation) return null;
+
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select("id,status,payment_status,subtotal,delivery_fee,discount_amount,total,promo_code,created_at")
+    .eq("id", reservation.order_id)
+    .eq("status", "pending_payment")
+    .eq("payment_status", "pending")
+    .maybeSingle();
+
+  if (orderError) throw orderError;
+  if (!order) return null;
+
+  const { data: items, error: itemError } = await supabase
+    .from("order_items")
+    .select("product_id,product_name,unit_price,quantity,line_total")
+    .eq("order_id", order.id)
+    .order("created_at", { ascending: true });
+
+  if (itemError) throw itemError;
+  if (!items?.length) return null;
+
+  return {
+    order,
+    reservation,
+    items: items.map((item) => ({
+      productId: item.product_id,
+      quantity: item.quantity,
+      product: {
+        id: item.product_id,
+        name: item.product_name,
+        price: item.unit_price,
+      },
+    })),
+  };
+}
+
+function renderPendingOrder(order) {
+  renderSummary({
+    subtotal: order.subtotal,
+    delivery_fee: order.delivery_fee,
+    delivery_enabled: Number(order.delivery_fee) > 0,
+    discount: order.discount_amount,
+    total: order.total,
+  });
+
+  promoInput.value = order.promo_code || "";
+  promoInput.disabled = true;
+  submit.textContent = "Retry payment";
+  reservationBox.hidden = false;
+  reservationOrder.textContent = `Order ${String(order.id).slice(0, 8)}`;
+  reservationMessage.textContent = "Your items are reserved while you complete payment.";
+}
+
+function reservationExpired() {
+  return !pendingReservation || Date.parse(pendingReservation.expires_at) <= Date.now();
+}
+
+function startReservationCountdown() {
+  if (reservationTimer) clearInterval(reservationTimer);
+  updateReservationCountdown();
+  reservationTimer = setInterval(updateReservationCountdown, 1000);
+}
+
+function updateReservationCountdown() {
+  if (!pendingReservation) return;
+  const remaining = Math.max(0, Date.parse(pendingReservation.expires_at) - Date.now());
+  if (remaining <= 0) {
+    clearInterval(reservationTimer);
+    reservationTimer = null;
+    reservationBox.classList.add("is-expired");
+    reservationCountdown.textContent = "Expired";
+    reservationMessage.textContent = "This reservation has expired. Return to your cart to start a new checkout.";
+    submit.disabled = true;
+    submit.textContent = "Reservation expired";
+    return;
+  }
+
+  const totalSeconds = Math.ceil(remaining / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  reservationCountdown.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
 function isDeliveryEnabled() {
@@ -191,6 +308,11 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
   setStatus("");
 
+  if (reservationExpired()) {
+    setStatus("This payment reservation has expired. Return to your cart to start a new checkout.", "error");
+    return;
+  }
+
   if (!hasCompleteDeliveryProfile(customerProfile)) {
     setStatus("Add your delivery details in My Account before continuing.", "error");
     return;
@@ -207,18 +329,25 @@ form.addEventListener("submit", async (event) => {
         delivery_name: customerProfile.full_name.trim(),
         delivery_phone: customerProfile.phone.trim(),
         delivery_address: customerProfile.address.trim(),
-        requested_promo_code: form.elements.promoCode.value.trim() || null,
+        requested_promo_code: promoInput.value.trim() || null,
       });
 
       if (error) throw error;
       pendingOrderId = data.order_id;
+      pendingReservation = { id: data.reservation_id, order_id: data.order_id, expires_at: data.expires_at };
       renderSummary(data);
+      reservationBox.hidden = false;
+      reservationBox.classList.remove("is-expired");
+      reservationOrder.textContent = `Order ${String(data.order_id).slice(0, 8)}`;
+      reservationMessage.textContent = "Your items are reserved while you complete payment.";
+      startReservationCountdown();
+      promoInput.disabled = true;
     }
 
     await initializePayment(pendingOrderId);
   } catch (error) {
     console.error(error);
-    if (error?.code === "ORDER_NOT_PAYABLE") pendingOrderId = null;
+    if (error?.code === "ORDER_NOT_PAYABLE" || error?.code === "ORDER_RESERVATION_EXPIRED") pendingOrderId = null;
 
     submit.disabled = false;
     submit.textContent = pendingOrderId ? "Retry payment" : "Continue to payment";
@@ -236,6 +365,11 @@ form.addEventListener("submit", async (event) => {
       setStatus("That promo code is invalid or inactive.", "error");
     } else if (message.includes("PROMO_MINIMUM_NOT_MET")) {
       setStatus("This promo code does not meet the minimum order amount.", "error");
+    } else if (message.includes("ORDER_RESERVATION_EXPIRED")) {
+      setStatus("Your payment reservation has expired. Return to your cart to start a new checkout.", "error");
+      reservationBox.classList.add("is-expired");
+      reservationCountdown.textContent = "Expired";
+      reservationMessage.textContent = "This reservation has expired. Return to your cart to start a new checkout.";
     } else if (message.includes("PAYMENT_INITIALIZATION_FAILED")) {
       setStatus("Your order is reserved, but payment could not be opened. Please try again.", "error");
     } else {
