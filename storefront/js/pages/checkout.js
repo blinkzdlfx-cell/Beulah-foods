@@ -11,6 +11,7 @@ const authNotice = document.getElementById("checkout-auth-notice");
 const form = document.getElementById("checkout-form");
 const summary = document.getElementById("checkout-items");
 const subtotalEl = document.getElementById("checkout-subtotal");
+const deliveryRow = document.getElementById("checkout-delivery-row");
 const deliveryEl = document.getElementById("checkout-delivery");
 const discountEl = document.getElementById("checkout-discount");
 const totalEl = document.getElementById("checkout-total");
@@ -48,11 +49,10 @@ async function init() {
   const [profile, products, deliveryResult] = await Promise.all([
     getCustomerProfile(),
     getProductsByIds(cart.map((item) => item.productId)),
-    supabase.from("delivery_settings").select("delivery_fee,free_delivery_threshold").eq("is_active", true).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("delivery_settings").select("delivery_fee,free_delivery_threshold,is_delivery_enabled,is_free_delivery_enabled").eq("is_active", true).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
   if (deliveryResult.error) throw deliveryResult.error;
   deliverySettings = deliveryResult.data;
-  if (!deliverySettings) throw new Error("DELIVERY_NOT_CONFIGURED");
 
   const productMap = new Map(products.map((product) => [String(product.id), product]));
   checkoutItems = cart.map((item) => ({ ...item, product: productMap.get(item.productId) })).filter((item) => item.product);
@@ -69,6 +69,19 @@ async function init() {
   submit.disabled = false;
 }
 
+function isDeliveryEnabled() {
+  return Boolean(deliverySettings?.is_delivery_enabled);
+}
+
+function calculateLocalDelivery(subtotal) {
+  if (!isDeliveryEnabled()) return 0;
+  const fee = Number(deliverySettings?.delivery_fee ?? 0);
+  const freeEnabled = Boolean(deliverySettings?.is_free_delivery_enabled);
+  const threshold = Number(deliverySettings?.free_delivery_threshold ?? 0);
+  if (freeEnabled && subtotal >= threshold) return 0;
+  return fee;
+}
+
 function getLocalSubtotal() {
   return checkoutItems.reduce((total, item) => total + Number(item.product.price) * Math.max(1, Number.parseInt(item.quantity, 10) || 1), 0);
 }
@@ -83,11 +96,15 @@ function renderSummary(totals = null) {
     row.innerHTML = `<span>${escapeHtml(item.product.name)} × ${quantity}</span><strong>${naira.format(lineTotal)}</strong>`;
     summary.append(row);
   }
+
   const subtotal = totals ? Number(totals.subtotal) : getLocalSubtotal();
-  const delivery = totals ? Number(totals.delivery_fee) : (subtotal >= Number(deliverySettings.free_delivery_threshold) ? 0 : Number(deliverySettings.delivery_fee));
+  const deliveryEnabled = totals ? Boolean(totals.delivery_enabled) : isDeliveryEnabled();
+  const delivery = totals ? Number(totals.delivery_fee) : calculateLocalDelivery(subtotal);
   const discount = totals ? Number(totals.discount) : 0;
   const total = totals ? Number(totals.total) : subtotal + delivery - discount;
+
   subtotalEl.textContent = naira.format(subtotal);
+  deliveryRow.hidden = !deliveryEnabled;
   deliveryEl.textContent = delivery === 0 ? "Free" : naira.format(delivery);
   discountEl.textContent = discount ? `−${naira.format(discount)}` : naira.format(0);
   totalEl.textContent = naira.format(total);
@@ -139,7 +156,7 @@ form.addEventListener("submit", async (event) => {
     if (message.includes("INSUFFICIENT_STOCK")) setStatus("One or more products no longer have enough stock. Please return to your cart and adjust the quantities.", "error");
     else if (message.includes("PRODUCT_UNAVAILABLE")) setStatus("One or more products are no longer available. Please return to your cart.", "error");
     else if (message.includes("DELIVERY_DETAILS_REQUIRED")) setStatus("Please complete your delivery details.", "error");
-    else if (message.includes("DELIVERY_NOT_CONFIGURED")) setStatus("Delivery settings have not been configured yet. Please try again later.", "error");
+    else if (message.includes("DELIVERY_CONFIGURATION_INVALID")) setStatus("The store delivery settings are incomplete. Please try again later.", "error");
     else if (message.includes("PROMO_INVALID")) setStatus("That promo code is invalid or inactive.", "error");
     else if (message.includes("PROMO_MINIMUM_NOT_MET")) setStatus("This promo code does not meet the minimum order amount.", "error");
     else if (message.includes("PAYMENT_INITIALIZATION_FAILED")) setStatus("The order is reserved, but payment could not be opened. You can retry payment without creating another order.", "error");
@@ -147,4 +164,4 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
-init().catch((error) => { console.error(error); if (error.message === "DELIVERY_NOT_CONFIGURED") setStatus("Checkout is waiting for the store delivery settings to be configured.", "error"); else setStatus("We could not prepare checkout. Please try again.", "error"); });
+init().catch((error) => { console.error(error); setStatus("We could not prepare checkout. Please try again.", "error"); });
