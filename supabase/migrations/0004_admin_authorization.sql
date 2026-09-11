@@ -52,21 +52,80 @@ drop policy if exists "Admins can delete products" on public.products;
 create policy "Admins can delete products" on public.products for delete to authenticated using (public.is_admin());
 
 -- Admins may inspect operational records. Customers remain restricted to their
--- own records by the policies in 0003.
+-- own records by the policies in 0003. Order status changes use a narrow
+-- trusted function so payment truth cannot be changed by an admin UI request.
 drop policy if exists "Admins can view all orders" on public.orders;
 create policy "Admins can view all orders" on public.orders for select to authenticated using (public.is_admin());
 
 drop policy if exists "Admins can update orders" on public.orders;
-create policy "Admins can update orders" on public.orders for update to authenticated using (public.is_admin()) with check (public.is_admin());
 
-drop policy if exists "Admins can view all order items" on public.order_items;
-create policy "Admins can view all order items" on public.order_items for select to authenticated using (public.is_admin());
+create policy "Admins can view all order items" on public.order_items
+  for select to authenticated using (public.is_admin());
 
-drop policy if exists "Admins can view all reservations" on public.reservations;
-create policy "Admins can view all reservations" on public.reservations for select to authenticated using (public.is_admin());
+create policy "Admins can view all reservations" on public.reservations
+  for select to authenticated using (public.is_admin());
 
-drop policy if exists "Admins can view all payments" on public.payments;
-create policy "Admins can view all payments" on public.payments for select to authenticated using (public.is_admin());
+create policy "Admins can view all payments" on public.payments
+  for select to authenticated using (public.is_admin());
+
+create or replace function public.admin_update_order_status(
+  target_order_id uuid,
+  target_status text
+)
+returns public.orders
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  updated_order public.orders;
+begin
+  if not public.is_admin() then
+    raise exception 'NOT_AUTHORIZED';
+  end if;
+
+  if target_status not in ('pending_payment', 'paid', 'processing', 'completed', 'cancelled') then
+    raise exception 'INVALID_ORDER_STATUS';
+  end if;
+
+  update public.orders
+  set status = target_status,
+      updated_at = now()
+  where id = target_order_id
+  returning * into updated_order;
+
+  if updated_order.id is null then
+    raise exception 'ORDER_NOT_FOUND';
+  end if;
+
+  return updated_order;
+end;
+$$;
+
+revoke all on function public.admin_update_order_status(uuid, text) from public, anon;
+grant execute on function public.admin_update_order_status(uuid, text) to authenticated;
+
+-- Payment status is payment-provider truth. Browser/admin roles must never be
+-- able to mutate it. A future trusted provider verification path uses the
+-- service role to perform the transition.
+create or replace function public.prevent_payment_status_tampering()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.payment_status is distinct from old.payment_status
+     and coalesce(auth.role(), '') <> 'service_role' then
+    raise exception 'PAYMENT_STATUS_TRUSTED_PATH_ONLY';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists prevent_payment_status_tampering on public.orders;
+create trigger prevent_payment_status_tampering
+  before update on public.orders
+  for each row
+  execute function public.prevent_payment_status_tampering();
 
 -- Safe provisioning boundary. This function is intentionally not executable by
 -- browser roles. Create the auth user first, then execute this from a trusted
