@@ -3,7 +3,6 @@ import { getCurrentSession, onAuthStateChange } from "../services/authService.js
 
 initHeader(document.getElementById("site-header-nav"));
 
-const heroAccountAction = document.getElementById("hero-account-action");
 const ctaTitle = document.getElementById("cta-title");
 const ctaCopy = document.getElementById("cta-copy");
 const ctaPrimaryAction = document.getElementById("cta-primary-action");
@@ -17,11 +16,6 @@ function updateAuthenticatedContent(session) {
   if (isNewAccount) {
     welcomeShown = true;
     window.localStorage.removeItem("beulah:new-account-welcome");
-  }
-
-  if (heroAccountAction) {
-    heroAccountAction.href = signedIn ? "shop.html" : "signup.html";
-    heroAccountAction.textContent = signedIn ? "Start shopping" : "Create an account";
   }
 
   if (ctaTitle) {
@@ -51,15 +45,8 @@ function updateAuthenticatedContent(session) {
   }
 }
 
-getCurrentSession()
-  .then(updateAuthenticatedContent)
-  .catch(() => updateAuthenticatedContent(null));
-
-onAuthStateChange((_event, session) => {
-  updateAuthenticatedContent(session);
-});
+getCurrentSession().then(updateAuthenticatedContent).catch(() => updateAuthenticatedContent(null));
+onAuthStateChange((_event, session) => updateAuthenticatedContent(session));
 
 const footerYear = document.getElementById("footer-year");
-if (footerYear) {
-  footerYear.textContent = String(new Date().getFullYear());
-}
+if (footerYear) footerYear.textContent = String(new Date().getFullYear());
