@@ -14,30 +14,31 @@ function ensureStyles() {
   const style = document.createElement("style");
   style.id = "beulah-header-responsive-styles";
   style.textContent = `
-    .site-header__menu-toggle,.site-header__menu{display:none}
-    .site-header__links{align-items:center}
-    .site-header__auth-link{margin-left:8px}
-    .site-header__auth-button{min-height:40px;padding:9px 14px;font-size:.82rem}
-    .site-header__cart-link,.site-header__account-icon{position:relative;width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;margin-left:4px;border:1px solid var(--color-border);border-radius:12px;color:var(--color-text);text-decoration:none;background:var(--color-surface)}
-    .site-header__cart-link svg,.site-header__account-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-    .site-header__cart-link:hover,.site-header__account-icon:hover{background:var(--color-bg);color:var(--color-accent)}
-    .site-header__cart-count{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;display:grid;place-items:center;border-radius:999px;background:var(--color-accent);color:#fff;font-size:.68rem;font-weight:800}
-    .site-header__cart-label{display:none}
-    .site-header__mark{width:44px;height:44px;border-radius:50%;background:var(--color-surface) url("/storefront/assets/beulah-logo.webp") center/contain no-repeat;color:transparent;overflow:hidden}
-    .site-header__menu-link{display:flex;align-items:center;width:100%;padding:11px 12px;border-radius:10px;color:var(--color-text);text-decoration:none}
-    .site-header__menu-link:hover{background:var(--color-accent-soft);color:var(--color-accent-dark)}
-    .site-header__menu .site-header__cart-link{width:100%;height:auto;min-height:46px;justify-content:flex-start;margin-left:0;border:0;background:transparent;border-radius:10px;gap:10px;box-shadow:none}
-    .site-header__menu .site-header__cart-label{display:inline}
-    .site-header__menu .site-header__cart-count{top:50%;right:12px;transform:translateY(-50%)}
-    .site-header__logout{border:0;background:transparent;font:inherit;text-align:left;cursor:pointer}
-    @media(max-width:760px){
-      .site-header__links{display:none}
-      .site-header__menu-toggle{display:inline-flex;width:42px;height:42px;padding:9px;flex-direction:column;justify-content:center;gap:5px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface);cursor:pointer}
-      .site-header__menu-toggle:hover{background:var(--color-bg)}
-      .site-header__menu-toggle span{display:block;width:100%;height:2px;border-radius:99px;background:currentColor}
-      .site-header__menu{position:absolute;top:calc(100% + 10px);right:0;width:min(300px,calc(100vw - 24px));display:grid;gap:3px;padding:8px;border:1px solid var(--color-border);border-radius:16px;background:var(--color-surface);box-shadow:var(--shadow-md);z-index:50}
-      .site-header__menu[hidden]{display:none}
-      .site-header__inner{position:relative}
+    .site-header__menu-toggle { display:none !important; }
+    .site-header__menu { display:none; }
+    .site-header__links { align-items:center; }
+    .site-header__auth-link { margin-left:8px; }
+    .site-header__auth-button { min-height:40px; padding:9px 14px; font-size:.82rem; }
+    .site-header__cart-link,.site-header__account-icon { position:relative; width:42px; height:42px; display:inline-flex; align-items:center; justify-content:center; margin-left:4px; border:1px solid var(--color-border); border-radius:12px; color:var(--color-text); text-decoration:none; background:var(--color-surface); }
+    .site-header__cart-link svg,.site-header__account-icon svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+    .site-header__cart-link:hover,.site-header__account-icon:hover { background:var(--color-bg); color:var(--color-accent); }
+    .site-header__cart-count { position:absolute; top:-5px; right:-5px; min-width:18px; height:18px; padding:0 4px; display:grid; place-items:center; border-radius:999px; background:var(--color-accent); color:#fff; font-size:.68rem; font-weight:800; }
+    .site-header__cart-label { display:none; }
+    .site-header__mark { width:44px; height:44px; border-radius:50%; background:var(--color-surface) url("/storefront/assets/beulah-logo.webp") center/contain no-repeat; color:transparent; overflow:hidden; }
+    .site-header__menu-link { display:flex; align-items:center; width:100%; padding:11px 12px; border-radius:10px; color:var(--color-text); text-decoration:none; }
+    .site-header__menu-link:hover { background:var(--color-accent-soft); color:var(--color-accent-dark); }
+    .site-header__menu .site-header__cart-link { width:100%; height:auto; min-height:46px; justify-content:flex-start; margin-left:0; border:0; background:transparent; border-radius:10px; gap:10px; box-shadow:none; }
+    .site-header__menu .site-header__cart-label { display:inline; }
+    .site-header__menu .site-header__cart-count { top:50%; right:12px; transform:translateY(-50%); }
+    .site-header__logout { border:0; background:transparent; font:inherit; text-align:left; cursor:pointer; }
+    @media (max-width:760px) {
+      .site-header__links { display:none !important; }
+      .site-header__menu-toggle { display:inline-flex !important; width:42px; height:42px; padding:9px; flex-direction:column; justify-content:center; gap:5px; border:1px solid var(--color-border); border-radius:12px; background:var(--color-surface); color:var(--color-text); cursor:pointer; }
+      .site-header__menu-toggle span { display:block; width:100%; height:2px; border-radius:99px; background:currentColor; }
+      .site-header__menu { position:absolute; top:calc(100% + 10px); right:0; width:min(300px,calc(100vw - 24px)); display:grid; gap:3px; padding:8px; border:1px solid var(--color-border); border-radius:16px; background:var(--color-surface); box-shadow:var(--shadow-md); z-index:50; }
+      .site-header__menu[hidden] { display:none !important; }
+      .site-header__inner { position:relative; }
+      .site-header__nav { min-height:42px; }
     }
   `;
   document.head.append(style);
