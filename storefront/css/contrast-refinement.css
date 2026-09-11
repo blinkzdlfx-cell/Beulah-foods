@@ -1,12 +1,15 @@
-/* Beulah Foods contrast and surface refinement */
+/*
+ * Compatibility layer retained for older page imports.
+ * The active storefront surface, border and action system lives in
+ * storefront/css/supabase-ui.css.
+ */
 
 :root {
-  --surface-soft: #f1f6e9;
-  --surface-muted: #e9f0df;
-  --surface-white: #ffffff;
+  --surface-soft: var(--color-surface-subtle);
+  --surface-muted: #edf2ef;
+  --surface-white: var(--color-surface);
 }
 
-/* Give white surfaces enough separation from the page background. */
 .account-summary,
 .account-form-card,
 .cart-summary,
@@ -15,55 +18,37 @@
 .shop-empty,
 .product-card,
 .cart-item,
-.auth-card,
-.story__copy {
-  background: var(--surface-white);
-  border-color: #d7e1cc;
-  box-shadow: 0 12px 34px rgba(31, 45, 18, 0.075);
+.auth-card {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
-.section--soft {
-  background: var(--surface-soft);
-}
+.section--soft { background: var(--color-surface); }
 
 .form-field input,
 .form-field textarea,
 .form-field select,
 .quantity-control input {
-  background: #fcfdf9;
-  border-color: #cfdac3;
+  background: var(--color-control);
+  border-color: var(--color-border);
   color: var(--color-text);
 }
 
-.form-field label {
-  color: #30382a;
-}
-
-.account-summary,
-.account-form-card,
-.cart-summary,
-.checkout-card,
-.shop-filters {
-  position: relative;
-}
+.form-field label { color: var(--color-text); }
 
 .account-summary::before,
 .account-form-card::before,
 .cart-summary::before,
 .checkout-card::before,
 .shop-filters::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  border-radius: inherit;
-  background: rgba(119, 252, 3, 0.42);
-  pointer-events: none;
+  content: none !important;
+  display: none !important;
 }
 
-@media (max-width: 760px) {
+@media (max-width:760px) {
   .site-header__menu {
-    background: #f3f8eb !important;
-    border: 1px solid #cfdcc2 !important;
+    background: var(--color-surface) !important;
+    border-color: var(--color-border) !important;
   }
 }
