@@ -203,7 +203,7 @@ function renderPendingOrder(order) {
 }
 
 function reservationExpired() {
-  return !pendingReservation || Date.parse(pendingReservation.expires_at) <= Date.now();
+  return Boolean(pendingReservation && Date.parse(pendingReservation.expires_at) <= Date.now());
 }
 
 function startReservationCountdown() {
