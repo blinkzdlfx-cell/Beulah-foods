@@ -1,6 +1,7 @@
 import { initHeader } from "../components/navbar.js";
 import { getProductBySlug } from "../services/catalogService.js";
 import { addToCart } from "../services/cartService.js";
+import { showToast } from "../components/toast.js";
 
 initHeader(document.getElementById("site-header-nav"));
 const root = document.getElementById("product-detail");
@@ -58,7 +59,17 @@ async function init() {
     const gridClass = product.image_src ? "product-detail__grid" : "product-detail__grid product-detail__grid--no-media";
     const disabled = inStock ? "" : "disabled";
     root.innerHTML = `<a class="product-back" href="shop.html">← Back to shop</a><div class="${gridClass}">${media}<div class="product-detail__content"><p class="eyebrow">Beulah Foods product</p><h1>${escapeHtml(product.name)}</h1><strong class="product-detail__price">${naira.format(Number(product.price))}</strong><p class="product-detail__description">${escapeHtml(product.description ?? "")}</p><p class="product-detail__stock ${inStock ? "" : "is-unavailable"}">${inStock ? "Available to order" : "Currently unavailable"}</p><div class="product-detail__actions"><label class="quantity-control"><span>Quantity</span><input id="product-quantity" type="number" min="1" value="1" inputmode="numeric" ${disabled}></label><button class="btn btn-primary" id="add-product" type="button" ${disabled}>${inStock ? "Add to cart" : "Unavailable"}</button></div><p class="product-detail__note">Final availability and pricing are rechecked from the live catalogue during checkout.</p><div id="product-feedback" class="product-feedback" role="status" aria-live="polite"></div></div></div>`;
-    document.getElementById("add-product")?.addEventListener("click", () => { const quantity = Math.max(1, Number.parseInt(document.getElementById("product-quantity").value, 10) || 1); addToCart(product.id, quantity); document.getElementById("product-feedback").textContent = "Added to your cart."; });
+    document.getElementById("add-product")?.addEventListener("click", () => {
+      const quantity = Math.max(1, Number.parseInt(document.getElementById("product-quantity").value, 10) || 1);
+      try {
+        addToCart(product.id, quantity);
+        document.getElementById("product-feedback").textContent = "Added to your cart.";
+        showToast(`${product.name} added to your cart.`, "success");
+      } catch (error) {
+        console.error(error);
+        showToast("We could not add this product to your cart.", "error");
+      }
+    });
   } catch (error) { console.error(error); setStatus("We could not load this product. Please return to the shop and try again.", "error"); }
 }
 init();
