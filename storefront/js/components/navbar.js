@@ -1,7 +1,5 @@
-// Shared site header. Shows Login/Signup links when signed out, or the
-// customer's name/email plus a Log out button when signed in. Keeps
-// itself in sync with auth state so a login/logout elsewhere updates it
-// without a page reload.
+// Shared site header. Keeps customer navigation in sync with Supabase auth.
+// Authenticated customers see account actions instead of Login/Signup.
 
 import {
   getCurrentSession,
@@ -11,8 +9,6 @@ import {
 
 export function initHeader(navEl) {
   if (!navEl) return;
-
-  renderNav(navEl, null);
 
   getCurrentSession()
     .then((session) => renderNav(navEl, session))
@@ -25,14 +21,21 @@ export function initHeader(navEl) {
 
 function renderNav(navEl, session) {
   navEl.textContent = "";
+  navEl.hidden = false;
 
   if (session?.user) {
-    const label = document.createElement("span");
-    label.textContent = session.user.email;
+    const homeLink = document.createElement("a");
+    homeLink.href = "index.html";
+    homeLink.textContent = "Home";
+
+    const accountLink = document.createElement("a");
+    accountLink.href = "account.html";
+    accountLink.textContent = "My account";
+    accountLink.className = "site-header__account-link";
 
     const logoutBtn = document.createElement("button");
     logoutBtn.type = "button";
-    logoutBtn.className = "btn btn-secondary";
+    logoutBtn.className = "btn btn-secondary site-header__logout";
     logoutBtn.textContent = "Log out";
     logoutBtn.addEventListener("click", async () => {
       logoutBtn.disabled = true;
@@ -44,19 +47,18 @@ function renderNav(navEl, session) {
       }
     });
 
-    navEl.append(label, logoutBtn);
-  } else {
-    const loginLink = document.createElement("a");
-    loginLink.href = "login.html";
-    loginLink.textContent = "Log in";
-
-    const signupLink = document.createElement("a");
-    signupLink.href = "signup.html";
-    signupLink.className = "btn btn-primary";
-    signupLink.textContent = "Sign up";
-
-    navEl.append(loginLink, signupLink);
+    navEl.append(homeLink, accountLink, logoutBtn);
+    return;
   }
 
-  navEl.hidden = false;
+  const loginLink = document.createElement("a");
+  loginLink.href = "login.html";
+  loginLink.textContent = "Log in";
+
+  const signupLink = document.createElement("a");
+  signupLink.href = "signup.html";
+  signupLink.className = "btn btn-primary";
+  signupLink.textContent = "Create account";
+
+  navEl.append(loginLink, signupLink);
 }
