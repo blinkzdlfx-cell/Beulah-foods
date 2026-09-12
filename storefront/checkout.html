@@ -37,7 +37,11 @@
         <strong id="checkout-reservation-countdown" class="checkout-reservation__countdown" aria-live="polite">15:00</strong>
       </div>
       <p id="checkout-reservation-message">Your items are reserved while you complete payment.</p>
-      <a href="orders.html">View my orders <span aria-hidden="true">→</span></a>
+      <div class="checkout-reservation__actions">
+        <a href="orders.html">View my orders <span aria-hidden="true">→</span></a>
+        <button id="checkout-cancel-reservation" class="btn btn-secondary" type="button">Cancel reservation</button>
+        <button id="checkout-retry-reservation" class="btn btn-primary" type="button" hidden>Retry checkout</button>
+      </div>
     </div>
 
     <div id="checkout-status" class="checkout-status" role="status" aria-live="polite" hidden></div>
