@@ -1,6 +1,5 @@
 const FORM_BUTTONS = {
   "category-form": "button[type=submit]",
-  "product-form": "#product-submit",
   "promo-form": "button[type=submit]",
 };
 
