@@ -15,7 +15,7 @@
   <header class="site-header">
     <div class="site-header__inner">
       <a class="site-header__logo-wrap" href="/" aria-label="Beulah Foods home">
-        <span class="site-header__mark" aria-hidden="true"></span>
+        <span class="site-header__mark"></span>
         <span class="site-header__brand">Beulah Foods</span>
       </a>
       <nav id="site-header-nav" class="site-header__nav" aria-label="Main navigation" hidden></nav>
@@ -26,10 +26,29 @@
     <section class="page-heading">
       <p class="eyebrow">My account</p>
       <h1>My orders</h1>
-      <p>View your orders, payment status, and any active payment reservation.</p>
+      <p>View your orders, payment status, and reservations.</p>
     </section>
 
-    <section class="card orders-card">
+    <section class="card orders-card" aria-labelledby="reservations-heading">
+      <div class="orders-section-heading">
+        <div>
+          <p class="orders-section-eyebrow">Checkout</p>
+          <h2 id="reservations-heading">My reservations</h2>
+          <p>Open reservations hold stock while you complete payment. You can have up to two open reservations at a time.</p>
+        </div>
+        <span id="open-reservation-count" class="orders-reservation-count">0 / 2 open</span>
+      </div>
+      <div id="reservations-status" class="alert" role="status" hidden></div>
+      <div id="reservations-list" class="orders-list"></div>
+    </section>
+
+    <section class="card orders-card" aria-labelledby="orders-heading">
+      <div class="orders-section-heading">
+        <div>
+          <p class="orders-section-eyebrow">History</p>
+          <h2 id="orders-heading">Order history</h2>
+        </div>
+      </div>
       <div id="orders-status" class="alert" role="status" hidden></div>
       <div id="orders-list" class="orders-list"></div>
     </section>
