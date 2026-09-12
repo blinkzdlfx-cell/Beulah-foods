@@ -43,6 +43,15 @@ async function getFresh(fetcher) {
   return fetcher();
 }
 
+function withAvailableStock(product) {
+  const physicalStock = Math.max(0, Number(product.stock_quantity) || 0);
+  const reservedStock = Math.max(0, Number(product.reserved_quantity) || 0);
+  return {
+    ...product,
+    stock_quantity: Math.max(0, physicalStock - reservedStock),
+  };
+}
+
 export function getProductImageUrl(imagePath) {
   if (!imagePath) return null;
   if (/^https?:\/\//i.test(imagePath)) return imagePath;
@@ -69,7 +78,7 @@ export async function getProducts({ categorySlug = "", page = 1, pageSize = 12 }
   return getFresh(async () => {
     let query = supabase
       .from("products")
-      .select("id, category_id, name, slug, description, price, image_url, stock_quantity", { count: "exact" })
+      .select("id, category_id, name, slug, description, price, image_url, stock_quantity, reserved_quantity", { count: "exact" })
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true });
@@ -91,7 +100,7 @@ export async function getProducts({ categorySlug = "", page = 1, pageSize = 12 }
     const { data, error, count } = await query.range(from, to);
     if (error) throw error;
     return {
-      products: (data ?? []).map((product) => ({ ...product, image_src: getProductImageUrl(product.image_url) })),
+      products: (data ?? []).map((product) => ({ ...withAvailableStock(product), image_src: getProductImageUrl(product.image_url) })),
       count: count ?? 0,
       page: safePage,
       pageSize: safePageSize,
@@ -107,11 +116,11 @@ export async function getProductsByIds(ids = []) {
   return getFresh(async () => {
     const { data, error } = await supabase
       .from("products")
-      .select("id, category_id, name, slug, description, price, image_url, stock_quantity")
+      .select("id, category_id, name, slug, description, price, image_url, stock_quantity, reserved_quantity")
       .in("id", productIds)
       .eq("is_active", true);
     if (error) throw error;
-    return (data ?? []).map((product) => ({ ...product, image_src: getProductImageUrl(product.image_url) }));
+    return (data ?? []).map((product) => ({ ...withAvailableStock(product), image_src: getProductImageUrl(product.image_url) }));
   });
 }
 
@@ -119,11 +128,11 @@ export async function getProductBySlug(slug) {
   return getFresh(async () => {
     const { data, error } = await supabase
       .from("products")
-      .select("id, category_id, name, slug, description, price, image_url, stock_quantity")
+      .select("id, category_id, name, slug, description, price, image_url, stock_quantity, reserved_quantity")
       .eq("slug", slug)
       .eq("is_active", true)
       .maybeSingle();
     if (error) throw error;
-    return data ? { ...data, image_src: getProductImageUrl(data.image_url) } : data;
+    return data ? { ...withAvailableStock(data), image_src: getProductImageUrl(data.image_url) } : data;
   });
 }
