@@ -19,7 +19,8 @@ async function init() {
   try {
     const product = await getProductBySlug(slug);
     if (!product) { setStatus("This product is no longer available.", "error"); return; }
-    const inStock = Number(product.stock_quantity) > 0;
+    const stock = Math.max(0, Number(product.stock_quantity) || 0);
+    const inStock = stock > 0;
     const description = String(product.description || `Shop ${product.name} from Beulah Foods.`).trim();
     const canonicalUrl = `${window.location.origin}/product?slug=${encodeURIComponent(product.slug || slug)}`;
     document.title = `${product.name} — Beulah Foods`;
@@ -58,9 +59,11 @@ async function init() {
       : "";
     const gridClass = product.image_src ? "product-detail__grid" : "product-detail__grid product-detail__grid--no-media";
     const disabled = inStock ? "" : "disabled";
-    root.innerHTML = `<a class="product-back" href="shop.html">← Back to shop</a><div class="${gridClass}">${media}<div class="product-detail__content"><p class="eyebrow">Beulah Foods product</p><h1>${escapeHtml(product.name)}</h1><strong class="product-detail__price">${naira.format(Number(product.price))}</strong><p class="product-detail__description">${escapeHtml(product.description ?? "")}</p><p class="product-detail__stock ${inStock ? "" : "is-unavailable"}">${inStock ? "Available to order" : "Currently unavailable"}</p><div class="product-detail__actions"><label class="quantity-control"><span>Quantity</span><input id="product-quantity" type="number" min="1" value="1" inputmode="numeric" ${disabled}></label><button class="btn btn-primary" id="add-product" type="button" ${disabled}>${inStock ? "Add to cart" : "Unavailable"}</button></div><p class="product-detail__note">Final availability and pricing are rechecked from the live catalogue during checkout.</p><div id="product-feedback" class="product-feedback" role="status" aria-live="polite"></div></div></div>`;
+    root.innerHTML = `<a class="product-back" href="shop.html">← Back to shop</a><div class="${gridClass}">${media}<div class="product-detail__content"><p class="eyebrow">Beulah Foods product</p><h1>${escapeHtml(product.name)}</h1><strong class="product-detail__price">${naira.format(Number(product.price))}</strong><p class="product-detail__description">${escapeHtml(product.description ?? "")}</p><p class="product-detail__stock ${inStock ? "" : "is-unavailable"}">${inStock ? `${stock} available to order` : "Currently unavailable"}</p><div class="product-detail__actions"><label class="quantity-control"><span>Quantity</span><input id="product-quantity" type="number" min="1" max="${stock}" value="1" inputmode="numeric" ${disabled}></label><button class="btn btn-primary" id="add-product" type="button" ${disabled}>${inStock ? "Add to cart" : "Unavailable"}</button></div><p class="product-detail__note">Final availability and pricing are rechecked from the live catalogue during checkout.</p><div id="product-feedback" class="product-feedback" role="status" aria-live="polite"></div></div></div>`;
     document.getElementById("add-product")?.addEventListener("click", () => {
-      const quantity = Math.max(1, Number.parseInt(document.getElementById("product-quantity").value, 10) || 1);
+      const input = document.getElementById("product-quantity");
+      const quantity = Math.max(1, Math.min(stock, Number.parseInt(input.value, 10) || 1));
+      input.value = String(quantity);
       try {
         addToCart(product.id, quantity);
         document.getElementById("product-feedback").textContent = "Added to your cart.";
