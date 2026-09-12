@@ -27,6 +27,9 @@ if (alertBox) {
         const form = document.getElementById(id);
         if (form) setBusy(form, false);
       });
+      if (/saved\./i.test(alertBox.textContent || "")) {
+        window.dispatchEvent(new CustomEvent("beulah:admin-inventory-refresh"));
+      }
     }
-  }).observe(alertBox, { attributes: true, attributeFilter: ["hidden", "class"] });
+  }).observe(alertBox, { attributes: true, childList: true, characterData: true, subtree: true });
 }
