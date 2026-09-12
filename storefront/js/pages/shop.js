@@ -1,6 +1,6 @@
 import { initHeader } from "../components/navbar.js";
 import { getCategories, getProducts } from "../services/catalogService.js";
-import { addToCart } from "../services/cartService.js";
+import { addToCart, getCart } from "../services/cartService.js";
 import { showToast } from "../components/toast.js";
 
 initHeader(document.getElementById("site-header-nav"));
@@ -44,13 +44,20 @@ function renderProducts(products) {
     const card = document.createElement("article");
     card.className = "product-card";
     const detailUrl = `product.html?slug=${encodeURIComponent(product.slug)}`;
-    const inStock = Number(product.stock_quantity) > 0;
+    const stock = Math.max(0, Number(product.stock_quantity) || 0);
+    const inStock = stock > 0;
     const media = product.image_src
       ? `<a class="product-card__media" href="${detailUrl}" aria-label="View ${escapeAttribute(product.name)}"><img class="product-card__image" src="${escapeAttribute(product.image_src)}" alt="${escapeAttribute(product.name)}" loading="lazy"></a>`
       : "";
-    card.innerHTML = `${media}<div class="product-card__body"><p class="product-card__availability ${inStock ? "" : "is-unavailable"}">${inStock ? "Available" : "Currently unavailable"}</p><h2><a href="${detailUrl}">${escapeHtml(product.name)}</a></h2><p class="product-card__description">${escapeHtml(product.description ?? "")}</p><div class="product-card__footer"><strong>${naira.format(Number(product.price))}</strong><button class="btn btn-primary product-card__add" type="button" data-product-id="${escapeAttribute(product.id)}" ${inStock ? "" : "disabled"}>${inStock ? "Add to cart" : "Unavailable"}</button></div></div>`;
+    card.innerHTML = `${media}<div class="product-card__body"><p class="product-card__availability ${inStock ? "" : "is-unavailable"}">${inStock ? `${stock} available` : "Currently unavailable"}</p><h2><a href="${detailUrl}">${escapeHtml(product.name)}</a></h2><p class="product-card__description">${escapeHtml(product.description ?? "")}</p><div class="product-card__footer"><strong>${naira.format(Number(product.price))}</strong><button class="btn btn-primary product-card__add" type="button" data-product-id="${escapeAttribute(product.id)}" ${inStock ? "" : "disabled"}>${inStock ? "Add to cart" : "Unavailable"}</button></div></div>`;
     card.querySelector(".product-card__add")?.addEventListener("click", () => {
       try {
+        const existing = getCart().find((item) => String(item.productId) === String(product.id));
+        const currentQuantity = Number(existing?.quantity) || 0;
+        if (currentQuantity >= stock) {
+          showToast(`Only ${stock} ${product.name} ${stock === 1 ? "is" : "are"} available.`, "error");
+          return;
+        }
         addToCart(product.id, 1);
         showToast(`${product.name} added to your cart.`, "success");
       } catch (error) {
