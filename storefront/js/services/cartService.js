@@ -46,6 +46,13 @@ export function removeFromCart(productId) {
   return items;
 }
 
+export function removeCartItems(productIds) {
+  const ids = new Set((productIds || []).map(String));
+  const items = getCart().filter((item) => !ids.has(String(item.productId)));
+  saveCart(items);
+  return items;
+}
+
 export function clearCart() { saveCart([]); }
 export function getCartItemCount() { return getCart().reduce((total, item) => total + item.quantity, 0); }
 export function onCartChange(callback) {
