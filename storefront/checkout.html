@@ -32,16 +32,18 @@
     <div id="checkout-reservation" class="checkout-reservation" hidden>
       <div class="checkout-reservation__topline">
         <div>
-          <span class="checkout-reservation__eyebrow">Order reserved</span>
+          <span id="checkout-reservation-eyebrow" class="checkout-reservation__eyebrow">Order reserved</span>
+          <h2 id="checkout-reservation-title" class="checkout-reservation__title">Complete your payment.</h2>
           <strong id="checkout-reservation-order">BF-58030001</strong>
         </div>
         <strong id="checkout-reservation-countdown" class="checkout-reservation__countdown" aria-live="polite">15:00</strong>
       </div>
-      <p id="checkout-reservation-message">Your items are reserved while you complete payment.</p>
+      <p id="checkout-reservation-message" class="checkout-reservation__message">Your items are reserved while you complete payment.</p>
       <div class="checkout-reservation__actions">
         <a href="orders.html">View my orders <span aria-hidden="true">→</span></a>
         <button id="checkout-cancel-reservation" class="btn btn-secondary" type="button">Cancel reservation</button>
         <button id="checkout-retry-reservation" class="btn btn-primary" type="button" hidden>Retry checkout</button>
+        <a id="checkout-return-cart" class="btn btn-secondary" href="cart.html" hidden>Return to cart</a>
       </div>
     </div>
 
