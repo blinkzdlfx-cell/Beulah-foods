@@ -42,12 +42,12 @@ async function fetchAvailableProducts(card) {
   refreshPromise = (async () => {
     const { data, error } = await supabase
       .from("products")
-      .select("stock_quantity")
+      .select("stock_quantity,reserved_quantity")
       .eq("is_active", true);
     if (error) throw error;
 
     const available = (data || []).reduce(
-      (total, item) => total + Math.max(0, Number(item.stock_quantity) || 0),
+      (total, item) => total + Math.max(0, (Number(item.stock_quantity) || 0) - (Number(item.reserved_quantity) || 0)),
       0,
     );
     writeCache(available);
@@ -70,7 +70,6 @@ async function refreshAvailableProducts({ force = false } = {}) {
   const cacheIsFresh = cached && Date.now() - cached.timestamp < CACHE_TTL_MS;
 
   if (!force && cached) render(card, cached.value);
-
   if (!force && cacheIsFresh) return;
 
   try {
