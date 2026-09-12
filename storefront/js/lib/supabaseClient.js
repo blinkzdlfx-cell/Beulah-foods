@@ -8,6 +8,7 @@
 // service_role key here or anywhere else in /storefront.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import "../components/navActive.js";
 
 const SUPABASE_URL = "https://wcyztayuulzxchkljdoo.supabase.co";
 const SUPABASE_ANON_KEY =
