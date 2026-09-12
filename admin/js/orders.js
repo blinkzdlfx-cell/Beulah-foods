@@ -11,6 +11,11 @@ let page = 1;
 
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character])); }
 function showStatus(message, error = false) { status.textContent = message; status.className = `alert${error ? " error" : ""}`; status.hidden = false; }
+function formatStatus(value) { return String(value || "").replaceAll("_", " "); }
+function statusLabel(value) {
+  const labels = { pending_payment: "Pending payment", paid: "Paid", processing: "Processing", completed: "Completed", cancelled: "Cancelled" };
+  return labels[value] || formatStatus(value);
+}
 
 async function init() {
   const access = await requireAdmin();
@@ -25,12 +30,15 @@ async function loadOrders() {
   if (error) throw error;
 
   rows.innerHTML = (data || []).map((order) => {
-    const options = statuses.map((value) => `<option value="${value}" ${value === order.status ? "selected" : ""}>${value.replaceAll("_", " ")}</option>`).join("");
+    const options = statuses.map((value) => `<option value="${value}" ${value === order.status ? "selected" : ""}>${statusLabel(value)}</option>`).join("");
     const items = order.order_items || [];
     const itemMarkup = items.length ? items.map((item) => `<span>${escapeHtml(item.product_name)} × ${item.quantity}</span>`).join("") : "<span>—</span>";
     const delivery = [order.delivery_name, order.delivery_phone, order.delivery_address].filter(Boolean).map(escapeHtml);
     const orderNumber = order.order_number || `BF-${String(order.id).slice(0, 8)}`;
-    return `<tr><td><strong>${escapeHtml(orderNumber)}</strong><small class="admin-order-id">${escapeHtml(order.id.slice(0, 8))}</small></td><td><div class="admin-order-customer"><strong>${delivery[0] || "Customer"}</strong><small>${delivery[1] || `ID ${escapeHtml(order.customer_id.slice(0, 8))}`}</small></div></td><td><div class="admin-order-items">${itemMarkup}</div></td><td><div class="admin-order-address">${delivery[2] || "No delivery address"}</div></td><td><div class="admin-order-total"><strong>${naira.format(Number(order.total))}</strong><small>Subtotal ${naira.format(Number(order.subtotal))}</small></div></td><td>${escapeHtml(order.payment_status)}</td><td><select class="order-status-select" data-order-id="${escapeHtml(order.id)}">${options}</select></td><td>${escapeHtml(new Date(order.created_at).toLocaleString("en-NG"))}</td></tr>`;
+    const orderStatus = statusLabel(order.status);
+    const paymentStatus = formatStatus(order.payment_status);
+    const statusClass = order.status === "cancelled" ? "is-cancelled" : order.status === "paid" ? "is-paid" : "is-pending";
+    return `<tr><td><strong>${escapeHtml(orderNumber)}</strong><small class="admin-order-id">${escapeHtml(order.id.slice(0, 8))}</small></td><td><div class="admin-order-customer"><strong>${delivery[0] || "Customer"}</strong><small>${delivery[1] || `ID ${escapeHtml(order.customer_id.slice(0, 8))}`}</small></div></td><td><div class="admin-order-items">${itemMarkup}</div></td><td><div class="admin-order-address">${delivery[2] || "No delivery address"}</div></td><td><div class="admin-order-total"><strong>${naira.format(Number(order.total))}</strong><small>Subtotal ${naira.format(Number(order.subtotal))}</small></div></td><td><span class="admin-status-badge">${escapeHtml(paymentStatus)}</span></td><td><span class="admin-status-badge ${statusClass}">${escapeHtml(orderStatus)}</span><select class="order-status-select" data-order-id="${escapeHtml(order.id)}" aria-label="Order status for ${escapeHtml(orderNumber)}">${options}</select></td><td>${escapeHtml(new Date(order.created_at).toLocaleString("en-NG"))}</td></tr>`;
   }).join("") || '<tr><td colspan="8">No orders yet.</td></tr>';
 
   renderPagination(Math.ceil((count || 0) / PAGE_SIZE));
@@ -50,7 +58,7 @@ async function updateStatus(select) {
   const orderId = select.dataset.orderId;
   const nextStatus = select.value;
   select.disabled = true;
-  try { const { error } = await supabase.rpc("admin_update_order_status", { target_order_id: orderId, target_status: nextStatus }); if (error) throw error; showStatus("Order status updated."); }
+  try { const { error } = await supabase.rpc("admin_update_order_status", { target_order_id: orderId, target_status: nextStatus }); if (error) throw error; showStatus("Order status updated."); await loadOrders(); }
   catch (error) { console.error(error); showStatus(error?.message || "Could not update order status.", true); await loadOrders(); }
   finally { select.disabled = false; }
 }
