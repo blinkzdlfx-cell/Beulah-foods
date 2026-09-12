@@ -22,7 +22,7 @@ async function init(){
     const activeReservation=order.status==="pending_payment"&&order.payment_status==="pending"&&reservation?.status==="active"&&Date.parse(reservation.expires_at)>Date.now();
     const expiredPending=order.status==="cancelled"&&order.payment_status==="pending"&&reservation?.status==="expired";
     const orderNumber=order.order_number||`BF-${order.id.slice(0,8)}`;
-    return `<article class="order-card"><a href="/order.html?id=${encodeURIComponent(order.id)}" class="order-card__main-link"><div class="order-card__top"><strong class="order-card__id">${escapeHtml(orderNumber)}</strong><span class="order-card__date">${escapeHtml(new Date(order.created_at).toLocaleString("en-NG"))}</span></div><div class="order-card__meta"><span class="order-card__status">Order: ${escapeHtml(formatStatus(order.status))}</span><span class="order-card__status">Payment: ${escapeHtml(formatStatus(order.payment_status))}</span></div><div class="order-card__total"><span>Total</span><strong>${naira.format(Number(order.total))}</strong></div></a>${activeReservation?`<div class="order-card__reservation"><div class="order-card__reservation-copy"><span class="order-card__reservation-label">Payment reserved</span><small>Complete payment before the reservation expires.</small></div><strong class="order-card__countdown" data-expires-at="${escapeHtml(reservation.expires_at)}">--:--</strong></div>`:""}${expiredPending?`<div class="order-card__reservation is-expired"><div class="order-card__reservation-copy"><span class="order-card__reservation-label">Payment pending</span><small>Your reservation expired before payment was completed.</small></div><strong class="order-card__countdown">Expired</strong></div><a class="order-card__retry" href="/order.html?id=${encodeURIComponent(order.id)}">Retry checkout</a>`:""}</article>`;
+    return `<article class="order-card"><a href="/order.html?id=${encodeURIComponent(order.id)}" class="order-card__main-link"><div class="order-card__top"><strong class="order-card__id">${escapeHtml(orderNumber)}</strong><span class="order-card__date">${escapeHtml(new Date(order.created_at).toLocaleString("en-NG"))}</span></div><div class="order-card__meta"><span class="order-card__status">Order: ${escapeHtml(formatStatus(order.status))}</span><span class="order-card__status">Payment: ${escapeHtml(formatStatus(order.payment_status))}</span></div><div class="order-card__total"><span>Total</span><strong>${naira.format(Number(order.total))}</strong></div></a>${activeReservation?`<div class="order-card__reservation" data-order-id="${escapeHtml(order.id)}"><div class="order-card__reservation-copy"><span class="order-card__reservation-label">Payment reserved</span><small>Complete payment before the reservation expires.</small></div><strong class="order-card__countdown" data-expires-at="${escapeHtml(reservation.expires_at)}">--:--</strong></div>`:""}${expiredPending?`<div class="order-card__reservation is-expired"><div class="order-card__reservation-copy"><span class="order-card__reservation-label">Payment pending</span><small>Your reservation expired before payment was completed.</small></div><strong class="order-card__countdown">Expired</strong></div><a class="order-card__retry" href="/order.html?id=${encodeURIComponent(order.id)}">Retry checkout</a>`:""}</article>`;
   }).join("");
   updateCountdowns();
   if(list.querySelector("[data-expires-at]"))countdownTimer=setInterval(updateCountdowns,1000);
@@ -31,7 +31,18 @@ function updateCountdowns(){
   let activeCount=0;
   list.querySelectorAll("[data-expires-at]").forEach(element=>{
     const remaining=Math.max(0,Date.parse(element.dataset.expiresAt)-Date.now());
-    if(remaining<=0){element.textContent="Expired";return;}
+    const reservation=element.closest(".order-card__reservation");
+    if(remaining<=0){
+      element.textContent="Expired";
+      reservation?.classList.add("is-expired");
+      const copy=reservation?.querySelector(".order-card__reservation-copy");
+      if(copy){const label=copy.querySelector(".order-card__reservation-label");const message=copy.querySelector("small");if(label)label.textContent="Payment pending";if(message)message.textContent="Your reservation expired before payment was completed.";}
+      if(reservation&&!reservation.nextElementSibling?.classList.contains("order-card__retry")){
+        const orderId=reservation.dataset.orderId;
+        const link=document.createElement("a");link.className="order-card__retry";link.href=`/order.html?id=${encodeURIComponent(orderId)}`;link.textContent="Retry checkout";reservation.insertAdjacentElement("afterend",link);
+      }
+      return;
+    }
     activeCount+=1;
     const totalSeconds=Math.ceil(remaining/1000),minutes=Math.floor(totalSeconds/60),seconds=totalSeconds%60;
     element.textContent=`${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
