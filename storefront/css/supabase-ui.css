@@ -28,7 +28,6 @@
 }
 
 body { background: var(--color-bg); color: var(--color-text); }
-
 ::selection { background: rgba(168, 207, 58, 0.30); color: var(--color-accent-ink); }
 
 .site-header {
@@ -47,6 +46,8 @@ body { background: var(--color-bg); color: var(--color-text); }
 .checkout-page,
 .account-page {
   width: min(var(--container-width), calc(100% - (var(--container-padding) * 2)));
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .site-header__inner { min-height: 74px; }
@@ -214,7 +215,11 @@ a:focus-visible { outline: 2px solid rgba(168, 207, 58, 0.45); outline-offset: 2
   .product-page,
   .cart-page,
   .checkout-page,
-  .account-page { width: min(100% - 24px, var(--container-width)); }
+  .account-page {
+    width: min(100% - 24px, var(--container-width));
+    margin-left: auto;
+    margin-right: auto;
+  }
   .site-header__inner { min-height: 66px; }
   .section { padding: var(--section-padding) 0; }
   .cta__box { padding: 40px 22px; }
