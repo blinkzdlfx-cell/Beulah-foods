@@ -28,10 +28,6 @@ function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>\"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 }
 
-function formatStatus(value) {
-  return String(value || "").replaceAll("_", " ");
-}
-
 function isActiveReservation(order, reservation) {
   return order?.status === "pending_payment"
     && order?.payment_status === "pending"
@@ -60,7 +56,7 @@ function renderReservations(orders, reservations, items) {
     const orderItems = itemsByOrder.get(orderId) || [];
     if (!order || !orderItems.length) continue;
     if (order.payment_status !== "pending") continue;
-    if (!['active', 'expired', 'cancelled'].includes(reservation.status)) continue;
+    if (!["active", "expired", "cancelled"].includes(reservation.status)) continue;
     entries.push({ order, reservation, items: orderItems });
   }
 
@@ -85,7 +81,7 @@ function renderReservations(orders, reservations, items) {
     const href = `checkout.html?order=${encodeURIComponent(order.id)}`;
     const stateLabel = active ? "Open" : expired ? "Expired" : "Cancelled";
     const action = active
-      ? `<a class="btn btn-primary" href="${href}">Continue payment</a>`
+      ? `<a class="btn btn-primary" href="${href}">Continue payment</a><button class="btn btn-secondary js-cancel-reservation" type="button" data-order-id="${escapeHtml(order.id)}">Cancel reservation</button>`
       : expired
         ? `<a class="btn btn-secondary" href="${href}">Retry checkout</a>`
         : `<a class="btn btn-secondary" href="${href}">View reservation</a>`;
@@ -111,6 +107,35 @@ function renderReservations(orders, reservations, items) {
 
   updateReservationCountdowns();
 }
+
+async function cancelReservation(orderId, button) {
+  if (!orderId) return;
+  if (!window.confirm("Cancel this reservation? Your reserved items will be released.")) return;
+
+  button.disabled = true;
+  button.textContent = "Cancelling…";
+  reservationsStatus.hidden = true;
+
+  try {
+    const { error } = await supabase.rpc("cancel_pending_order", { target_order_id: orderId });
+    if (error) throw error;
+    await init();
+    reservationsStatus.textContent = "Reservation cancelled. The reserved items have been released.";
+    reservationsStatus.className = "alert";
+    reservationsStatus.hidden = false;
+  } catch (error) {
+    console.error("Unable to cancel reservation:", error);
+    button.disabled = false;
+    button.textContent = "Cancel reservation";
+    showReservationError(error?.message || "Unable to cancel this reservation. Please try again.");
+  }
+}
+
+reservationsList.addEventListener("click", (event) => {
+  const button = event.target.closest(".js-cancel-reservation");
+  if (!button) return;
+  cancelReservation(button.dataset.orderId, button);
+});
 
 async function init() {
   const session = await getCurrentSession();
@@ -164,11 +189,19 @@ async function init() {
 
   updateCountdowns();
   if (list.querySelector("[data-expires-at]") || reservationsList.querySelector("[data-reservation-expires]")) {
+    if (countdownTimer) clearInterval(countdownTimer);
     countdownTimer = setInterval(() => {
       updateCountdowns();
       updateReservationCountdowns();
     }, 1000);
+  } else if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
   }
+}
+
+function formatStatus(value) {
+  return String(value || "").replaceAll("_", " ");
 }
 
 function updateCountdowns() {
