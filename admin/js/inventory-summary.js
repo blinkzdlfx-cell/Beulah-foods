@@ -24,10 +24,15 @@ async function refreshAvailableProducts() {
 function init() {
   const app = document.getElementById("admin-app");
   if (!app) return;
-  if (!app.classList.contains("hidden")) refreshAvailableProducts();
-  new MutationObserver(() => {
+  const refresh = () => {
     if (!app.classList.contains("hidden")) refreshAvailableProducts();
-  }).observe(app, { attributes: true, attributeFilter: ["class"] });
+  };
+  refresh();
+  window.addEventListener("beulah:admin-inventory-refresh", refresh);
+  window.addEventListener("beulah:delivery-saved", refresh);
+  window.addEventListener("focus", refresh);
+  document.addEventListener("visibilitychange", refresh);
+  setInterval(refresh, 30000);
 }
 
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
