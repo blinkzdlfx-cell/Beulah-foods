@@ -93,6 +93,7 @@ productForm.addEventListener("submit", async (event) => {
       stock_quantity: Math.max(0, Number.parseInt(values.stock_quantity, 10) || 0),
       sort_order: Number(values.sort_order) || 0,
       is_active: values.is_active === "on",
+      is_featured: values.is_featured === "on",
     };
 
     if (productId.value) {
@@ -129,10 +130,10 @@ async function loadCategories() {
 async function loadProducts() {
   const from = (productPage - 1) * PRODUCT_PAGE_SIZE;
   const to = from + PRODUCT_PAGE_SIZE - 1;
-  const { data, error, count } = await supabase.from("products").select("id,category_id,name,slug,description,price,image_url,stock_quantity,reserved_quantity,sort_order,is_active,categories(name)", { count: "exact" }).order("sort_order").order("name").range(from, to);
+  const { data, error, count } = await supabase.from("products").select("id,category_id,name,slug,description,price,image_url,stock_quantity,reserved_quantity,sort_order,is_active,is_featured,categories(name)", { count: "exact" }).order("sort_order").order("name").range(from, to);
   if (error) throw error;
   products = data || [];
-  productRows.innerHTML = products.map((item) => `<tr><td><div class="admin-product-cell">${item.image_url ? `<img src="${escapeAttribute(getProductImageUrl(item.image_url))}" alt="" loading="lazy">` : ""}<span>${escapeHtml(item.name)}</span></div></td><td>${item.categories?.name ? escapeHtml(item.categories.name) : "—"}</td><td>${formatNaira(item.price)}</td><td>${item.stock_quantity}</td><td>${item.is_active ? '<span class="badge">Active</span>' : 'Inactive'}</td><td><button class="btn btn-secondary" data-edit-product="${item.id}">Edit</button> <button class="btn btn-secondary" data-toggle-product="${item.id}">${item.is_active ? "Deactivate" : "Activate"}</button></td></tr>`).join("") || '<tr><td colspan="6" class="muted">No products yet.</td></tr>';
+  productRows.innerHTML = products.map((item) => `<tr><td><div class="admin-product-cell">${item.image_url ? `<img src="${escapeAttribute(getProductImageUrl(item.image_url))}" alt="" loading="lazy">` : ""}<span>${escapeHtml(item.name)}</span></div></td><td>${item.categories?.name ? escapeHtml(item.categories.name) : "—"}</td><td>${formatNaira(item.price)}</td><td>${item.stock_quantity}</td><td>${item.is_featured ? '<span class="badge badge--featured">Featured</span>' : '—'}</td><td>${item.is_active ? '<span class="badge">Active</span>' : 'Inactive'}</td><td><button class="btn btn-secondary" data-edit-product="${item.id}">Edit</button> <button class="btn btn-secondary" data-toggle-product="${item.id}">${item.is_active ? "Deactivate" : "Activate"}</button></td></tr>`).join("") || '<tr><td colspan="7" class="muted">No products yet.</td></tr>';
   productRows.querySelectorAll("[data-edit-product]").forEach((button) => button.addEventListener("click", () => editProduct(button.dataset.editProduct)));
   productRows.querySelectorAll("[data-toggle-product]").forEach((button) => button.addEventListener("click", () => toggleProduct(button.dataset.toggleProduct)));
   const totalPages = Math.ceil((count || 0) / PRODUCT_PAGE_SIZE);
@@ -156,7 +157,7 @@ async function toggleProduct(id) { const item = products.find((entry) => entry.i
 
 function editProduct(id) {
   const item = products.find((entry) => entry.id === id); if (!item) return;
-  productId.value = item.id; productForm.name.value = item.name; productForm.category_id.value = item.category_id || ""; productForm.description.value = item.description || ""; productForm.price.value = item.price; productForm.stock_quantity.value = item.stock_quantity; productForm.sort_order.value = item.sort_order; productForm.is_active.checked = item.is_active; productImage.value = "";
+  productId.value = item.id; productForm.name.value = item.name; productForm.category_id.value = item.category_id || ""; productForm.description.value = item.description || ""; productForm.price.value = item.price; productForm.stock_quantity.value = item.stock_quantity; productForm.sort_order.value = item.sort_order; productForm.is_active.checked = item.is_active; productForm.is_featured.checked = Boolean(item.is_featured); productImage.value = "";
   if (item.image_url) renderPreview(getProductImageUrl(item.image_url)); else { productPreview.hidden = true; productPreview.innerHTML = ""; }
   document.getElementById("product-submit").textContent = "Update product"; window.scrollTo({ top: 0, behavior: "smooth" });
 }
