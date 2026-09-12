@@ -37,6 +37,12 @@ async function getOrRefresh(key, fetcher) {
   return data;
 }
 
+// Inventory is transactional data. Never serve stock_quantity from the
+// session cache because checkout/reservation can change it immediately.
+async function getFresh(fetcher) {
+  return fetcher();
+}
+
 export function getProductImageUrl(imagePath) {
   if (!imagePath) return null;
   if (/^https?:\/\//i.test(imagePath)) return imagePath;
@@ -59,9 +65,8 @@ export async function getCategories() {
 export async function getProducts({ categorySlug = "", page = 1, pageSize = 12 } = {}) {
   const safePage = Math.max(1, Number.parseInt(page, 10) || 1);
   const safePageSize = Math.min(50, Math.max(1, Number.parseInt(pageSize, 10) || 12));
-  const cacheKey = `products:${categorySlug}:${safePage}:${safePageSize}`;
 
-  return getOrRefresh(cacheKey, async () => {
+  return getFresh(async () => {
     let query = supabase
       .from("products")
       .select("id, category_id, name, slug, description, price, image_url, stock_quantity", { count: "exact" })
@@ -98,7 +103,8 @@ export async function getProducts({ categorySlug = "", page = 1, pageSize = 12 }
 export async function getProductsByIds(ids = []) {
   const productIds = [...new Set(ids.map(String).filter(Boolean))].sort();
   if (!productIds.length) return [];
-  return getOrRefresh(`products-by-id:${productIds.join(",")}`, async () => {
+
+  return getFresh(async () => {
     const { data, error } = await supabase
       .from("products")
       .select("id, category_id, name, slug, description, price, image_url, stock_quantity")
@@ -110,7 +116,7 @@ export async function getProductsByIds(ids = []) {
 }
 
 export async function getProductBySlug(slug) {
-  return getOrRefresh(`product:${slug}`, async () => {
+  return getFresh(async () => {
     const { data, error } = await supabase
       .from("products")
       .select("id, category_id, name, slug, description, price, image_url, stock_quantity")
