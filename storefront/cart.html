@@ -27,21 +27,31 @@
     <section class="cart-heading">
       <p class="eyebrow">Your order</p>
       <h1>Your cart.</h1>
-      <p>Check your items and quantities before checkout.</p>
+      <p>Choose what you want to buy now. Anything you leave unselected stays in your cart.</p>
     </section>
 
     <div id="cart-status" class="cart-status" role="status" aria-live="polite" hidden></div>
 
     <div class="cart-content">
-      <section id="cart-list" class="cart-list" aria-label="Cart items"></section>
+      <section class="cart-list-wrap">
+        <div id="cart-select-bar" class="cart-select-bar" hidden>
+          <label class="cart-select-all"><input id="cart-select-all" type="checkbox" checked> <span>Select all</span></label>
+          <span id="cart-selected-count" class="cart-selected-count">0 selected</span>
+        </div>
+        <section id="cart-list" class="cart-list" aria-label="Cart items"></section>
+      </section>
 
       <aside id="cart-summary" class="cart-summary card" hidden>
         <h2>Order summary</h2>
         <div class="cart-summary__row">
+          <span>Selected items</span>
+          <strong id="cart-selected-items">0</strong>
+        </div>
+        <div class="cart-summary__row">
           <span>Subtotal</span>
           <strong id="cart-subtotal">₦0.00</strong>
         </div>
-        <a id="checkout-link" class="btn btn-primary" href="checkout.html">Continue to checkout</a>
+        <a id="checkout-link" class="btn btn-primary" href="checkout.html" aria-disabled="true">Review order</a>
       </aside>
     </div>
 
