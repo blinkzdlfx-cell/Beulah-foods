@@ -15,16 +15,28 @@ async function syncCheckoutOrderHint() {
 
   const params = new URLSearchParams(location.search);
   const hasExplicitCartSelection = params.get("items")?.trim();
+  const explicitOrderId = params.get("order")?.trim();
+
+  const session = await getCurrentSession();
+  if (!session?.user?.id) return;
 
   // A checkout opened from Cart is explicitly starting from that selection.
-  // Never let an older cancelled/expired order hijack a new checkout.
+  // Never let an older reservation hijack a new checkout.
   if (hasExplicitCartSelection) {
     localStorage.removeItem(CHECKOUT_ORDER_KEY);
     return;
   }
 
-  const session = await getCurrentSession();
-  if (!session?.user?.id) return;
+  // A reservation opened from My Reservations must restore that exact order.
+  // checkout.js still verifies ownership and payment state against Supabase;
+  // this URL value is only a locator, never an authorization boundary.
+  if (explicitOrderId) {
+    localStorage.setItem(CHECKOUT_ORDER_KEY, JSON.stringify({
+      userId: session.user.id,
+      orderId: explicitOrderId,
+    }));
+    return;
+  }
 
   const { data: orders, error: orderError } = await supabase
     .from("orders")
