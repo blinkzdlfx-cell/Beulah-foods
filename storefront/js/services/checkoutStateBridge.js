@@ -73,4 +73,6 @@ async function syncCheckoutOrderHint() {
   }));
 }
 
-void syncCheckoutOrderHint();
+// Top-level await makes checkout.js start only after the database-backed
+// checkout locator has been refreshed. localStorage is now only a locator/cache.
+await syncCheckoutOrderHint();
