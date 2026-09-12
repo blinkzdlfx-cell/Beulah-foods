@@ -6,14 +6,10 @@ async function refreshAvailableProducts() {
   try {
     const { data, error } = await supabase
       .from("products")
-      .select("stock_quantity,reserved_quantity")
+      .select("stock_quantity")
       .eq("is_active", true);
     if (error) throw error;
-    const available = (data || []).reduce((total, item) => {
-      const stock = Math.max(0, Number(item.stock_quantity) || 0);
-      const reserved = Math.max(0, Number(item.reserved_quantity) || 0);
-      return total + Math.max(0, stock - reserved);
-    }, 0);
+    const available = (data || []).reduce((total, item) => total + Math.max(0, Number(item.stock_quantity) || 0), 0);
     card.textContent = available;
   } catch (error) {
     console.error("Could not load available product count", error);
