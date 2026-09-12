@@ -48,30 +48,20 @@ function escapeHtml(value) {
 }
 
 function hasCompleteDeliveryProfile(profile) {
-  return Boolean(
-    profile?.full_name?.trim()
-      && profile?.phone?.trim()
-      && profile?.address?.trim(),
-  );
+  return Boolean(profile?.full_name?.trim() && profile?.phone?.trim() && profile?.address?.trim());
 }
 
 function renderProfile(profile) {
   customerProfile = profile ?? null;
-
   const complete = hasCompleteDeliveryProfile(customerProfile);
   profileCard.hidden = !complete;
   profileMissing.hidden = complete;
   submit.disabled = !complete || reservationExpired();
-
   fullNameEl.textContent = customerProfile?.full_name?.trim() || "—";
   phoneEl.textContent = customerProfile?.phone?.trim() || "—";
   addressEl.textContent = customerProfile?.address?.trim() || "—";
-
-  if (!complete) {
-    setStatus("Add your delivery details in My Account before continuing.", "error");
-  } else if (!pendingReservation) {
-    setStatus("");
-  }
+  if (!complete) setStatus("Add your delivery details in My Account before continuing.", "error");
+  else if (!pendingReservation) setStatus("");
 }
 
 async function init() {
@@ -83,10 +73,7 @@ async function init() {
     return;
   }
 
-  const [profile, pending] = await Promise.all([
-    getCustomerProfile(),
-    findActivePendingOrder(),
-  ]);
+  const [profile, pending] = await Promise.all([getCustomerProfile(), findActivePendingOrder()]);
 
   if (pending) {
     pendingOrderId = pending.order.id;
@@ -110,7 +97,7 @@ async function init() {
     getProductsByIds(cart.map((item) => item.productId)),
     supabase
       .from("delivery_settings")
-      .select("delivery_fee,free_delivery_threshold,is_delivery_enabled,is_free_delivery_enabled")
+      .select("delivery_fee,is_delivery_enabled")
       .eq("is_active", true)
       .order("updated_at", { ascending: false })
       .limit(1)
@@ -121,9 +108,7 @@ async function init() {
   deliverySettings = deliveryResult.data;
 
   const productMap = new Map(products.map((product) => [String(product.id), product]));
-  checkoutItems = cart
-    .map((item) => ({ ...item, product: productMap.get(item.productId) }))
-    .filter((item) => item.product);
+  checkoutItems = cart.map((item) => ({ ...item, product: productMap.get(item.productId) })).filter((item) => item.product);
 
   if (!checkoutItems.length) {
     setStatus("The products in your cart are no longer available. Please return to the shop.", "error");
@@ -138,62 +123,24 @@ async function init() {
 
 async function findActivePendingOrder() {
   const now = new Date().toISOString();
-  const { data: reservations, error: reservationError } = await supabase
-    .from("reservations")
-    .select("id,order_id,expires_at")
-    .eq("status", "active")
-    .gt("expires_at", now)
-    .order("created_at", { ascending: false })
-    .limit(1);
-
+  const { data: reservations, error: reservationError } = await supabase.from("reservations").select("id,order_id,expires_at").eq("status", "active").gt("expires_at", now).order("created_at", { ascending: false }).limit(1);
   if (reservationError) throw reservationError;
   const reservation = reservations?.[0];
   if (!reservation) return null;
 
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .select("id,status,payment_status,subtotal,delivery_fee,discount_amount,total,promo_code,created_at")
-    .eq("id", reservation.order_id)
-    .eq("status", "pending_payment")
-    .eq("payment_status", "pending")
-    .maybeSingle();
-
+  const { data: order, error: orderError } = await supabase.from("orders").select("id,status,payment_status,subtotal,delivery_fee,discount_amount,total,promo_code,created_at").eq("id", reservation.order_id).eq("status", "pending_payment").eq("payment_status", "pending").maybeSingle();
   if (orderError) throw orderError;
   if (!order) return null;
 
-  const { data: items, error: itemError } = await supabase
-    .from("order_items")
-    .select("product_id,product_name,unit_price,quantity,line_total")
-    .eq("order_id", order.id)
-    .order("created_at", { ascending: true });
-
+  const { data: items, error: itemError } = await supabase.from("order_items").select("product_id,product_name,unit_price,quantity,line_total").eq("order_id", order.id).order("created_at", { ascending: true });
   if (itemError) throw itemError;
   if (!items?.length) return null;
 
-  return {
-    order,
-    reservation,
-    items: items.map((item) => ({
-      productId: item.product_id,
-      quantity: item.quantity,
-      product: {
-        id: item.product_id,
-        name: item.product_name,
-        price: item.unit_price,
-      },
-    })),
-  };
+  return { order, reservation, items: items.map((item) => ({ productId: item.product_id, quantity: item.quantity, product: { id: item.product_id, name: item.product_name, price: item.unit_price } })) };
 }
 
 function renderPendingOrder(order) {
-  renderSummary({
-    subtotal: order.subtotal,
-    delivery_fee: order.delivery_fee,
-    delivery_enabled: true,
-    discount: order.discount_amount,
-    total: order.total,
-  });
-
+  renderSummary({ subtotal: order.subtotal, delivery_fee: order.delivery_fee, delivery_enabled: Number(order.delivery_fee) > 0, discount: order.discount_amount, total: order.total });
   promoInput.value = order.promo_code || "";
   promoInput.disabled = true;
   submit.textContent = "Retry payment";
@@ -225,7 +172,6 @@ function updateReservationCountdown() {
     submit.textContent = "Reservation expired";
     return;
   }
-
   const totalSeconds = Math.ceil(remaining / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -236,27 +182,17 @@ function isDeliveryEnabled() {
   return Boolean(deliverySettings?.is_delivery_enabled);
 }
 
-function calculateLocalDelivery(subtotal) {
+function calculateLocalDelivery() {
   if (!isDeliveryEnabled()) return 0;
-
-  const fee = Number(deliverySettings?.delivery_fee ?? 0);
-  const freeEnabled = Boolean(deliverySettings?.is_free_delivery_enabled);
-  const threshold = Number(deliverySettings?.free_delivery_threshold ?? 0);
-
-  if (freeEnabled && subtotal >= threshold) return 0;
-  return fee;
+  return Math.max(0, Number(deliverySettings?.delivery_fee ?? 0));
 }
 
 function getLocalSubtotal() {
-  return checkoutItems.reduce(
-    (total, item) => total + Number(item.product.price) * Math.max(1, Number.parseInt(item.quantity, 10) || 1),
-    0,
-  );
+  return checkoutItems.reduce((total, item) => total + Number(item.product.price) * Math.max(1, Number.parseInt(item.quantity, 10) || 1), 0);
 }
 
 function renderSummary(totals = null) {
   summary.innerHTML = "";
-
   for (const item of checkoutItems) {
     const quantity = Math.max(1, Number.parseInt(item.quantity, 10) || 1);
     const lineTotal = Number(item.product.price) * quantity;
@@ -268,7 +204,7 @@ function renderSummary(totals = null) {
 
   const subtotal = totals ? Number(totals.subtotal) : getLocalSubtotal();
   const deliveryEnabled = totals ? Boolean(totals.delivery_enabled) : isDeliveryEnabled();
-  const delivery = totals ? Number(totals.delivery_fee) : calculateLocalDelivery(subtotal);
+  const delivery = totals ? Number(totals.delivery_fee) : calculateLocalDelivery();
   const discount = totals ? Number(totals.discount) : 0;
   const total = totals ? Number(totals.total) : subtotal + delivery - discount;
 
@@ -281,57 +217,25 @@ function renderSummary(totals = null) {
 }
 
 async function initializePayment(orderId) {
-  const response = await fetch("/api/paystack/initialize", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${currentSession.access_token}`,
-    },
-    body: JSON.stringify({ order_id: orderId }),
-  });
-
+  const response = await fetch("/api/paystack/initialize", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${currentSession.access_token}` }, body: JSON.stringify({ order_id: orderId }) });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const error = new Error(data?.error || "PAYMENT_INITIALIZATION_FAILED");
-    error.code = data?.error;
-    throw error;
-  }
-
-  if (!data.authorization_url) {
-    throw new Error("PAYMENT_INITIALIZATION_FAILED");
-  }
-
+  if (!response.ok) { const error = new Error(data?.error || "PAYMENT_INITIALIZATION_FAILED"); error.code = data?.error; throw error; }
+  if (!data.authorization_url) throw new Error("PAYMENT_INITIALIZATION_FAILED");
   window.location.href = data.authorization_url;
 }
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   setStatus("");
-
-  if (reservationExpired()) {
-    setStatus("This payment reservation has expired. Return to your cart to start a new checkout.", "error");
-    return;
-  }
-
-  if (!hasCompleteDeliveryProfile(customerProfile)) {
-    setStatus("Add your delivery details in My Account before continuing.", "error");
-    return;
-  }
+  if (reservationExpired()) { setStatus("This payment reservation has expired. Return to your cart to start a new checkout.", "error"); return; }
+  if (!hasCompleteDeliveryProfile(customerProfile)) { setStatus("Add your delivery details in My Account before continuing.", "error"); return; }
 
   submit.disabled = true;
   submit.textContent = pendingOrderId ? "Opening payment…" : "Preparing payment…";
-
   try {
     if (!pendingOrderId) {
       const cartItems = checkoutItems.map(({ productId, quantity }) => ({ productId, quantity }));
-      const { data, error } = await supabase.rpc("create_pending_order", {
-        cart_items: cartItems,
-        delivery_name: customerProfile.full_name.trim(),
-        delivery_phone: customerProfile.phone.trim(),
-        delivery_address: customerProfile.address.trim(),
-        requested_promo_code: promoInput.value.trim() || null,
-      });
-
+      const { data, error } = await supabase.rpc("create_pending_order", { cart_items: cartItems, delivery_name: customerProfile.full_name.trim(), delivery_phone: customerProfile.phone.trim(), delivery_address: customerProfile.address.trim(), requested_promo_code: promoInput.value.trim() || null });
       if (error) throw error;
       pendingOrderId = data.order_id;
       pendingReservation = { id: data.reservation_id, order_id: data.order_id, expires_at: data.expires_at };
@@ -343,42 +247,23 @@ form.addEventListener("submit", async (event) => {
       startReservationCountdown();
       promoInput.disabled = true;
     }
-
     await initializePayment(pendingOrderId);
   } catch (error) {
     console.error(error);
     if (error?.code === "ORDER_NOT_PAYABLE" || error?.code === "ORDER_RESERVATION_EXPIRED") pendingOrderId = null;
-
     submit.disabled = false;
     submit.textContent = pendingOrderId ? "Retry payment" : "Continue to payment";
-
     const message = error?.message ?? "";
-    if (message.includes("INSUFFICIENT_STOCK")) {
-      setStatus("One or more products no longer have enough stock. Please return to your cart and adjust the quantities.", "error");
-    } else if (message.includes("PRODUCT_UNAVAILABLE")) {
-      setStatus("One or more products are no longer available. Please return to your cart.", "error");
-    } else if (message.includes("DELIVERY_DETAILS_REQUIRED")) {
-      setStatus("Add your delivery details in My Account before continuing.", "error");
-    } else if (message.includes("DELIVERY_CONFIGURATION_INVALID")) {
-      setStatus("Delivery is temporarily unavailable. Please try again later.", "error");
-    } else if (message.includes("PROMO_INVALID")) {
-      setStatus("That promo code is invalid or inactive.", "error");
-    } else if (message.includes("PROMO_MINIMUM_NOT_MET")) {
-      setStatus("This promo code does not meet the minimum order amount.", "error");
-    } else if (message.includes("ORDER_RESERVATION_EXPIRED")) {
-      setStatus("Your payment reservation has expired. Return to your cart to start a new checkout.", "error");
-      reservationBox.classList.add("is-expired");
-      reservationCountdown.textContent = "Expired";
-      reservationMessage.textContent = "This reservation has expired. Return to your cart to start a new checkout.";
-    } else if (message.includes("PAYMENT_INITIALIZATION_FAILED")) {
-      setStatus("Your order is reserved, but payment could not be opened. Please try again.", "error");
-    } else {
-      setStatus("We could not prepare the payment. Please try again.", "error");
-    }
+    if (message.includes("INSUFFICIENT_STOCK")) setStatus("One or more products no longer have enough stock. Please return to your cart and adjust the quantities.", "error");
+    else if (message.includes("PRODUCT_UNAVAILABLE")) setStatus("One or more products are no longer available. Please return to your cart.", "error");
+    else if (message.includes("DELIVERY_DETAILS_REQUIRED")) setStatus("Add your delivery details in My Account before continuing.", "error");
+    else if (message.includes("DELIVERY_CONFIGURATION_INVALID")) setStatus("Delivery is temporarily unavailable. Please try again later.", "error");
+    else if (message.includes("PROMO_INVALID")) setStatus("That promo code is invalid or inactive.", "error");
+    else if (message.includes("PROMO_MINIMUM_NOT_MET")) setStatus("This promo code does not meet the minimum order amount.", "error");
+    else if (message.includes("ORDER_RESERVATION_EXPIRED")) { setStatus("Your payment reservation has expired. Return to your cart to start a new checkout.", "error"); reservationBox.classList.add("is-expired"); reservationCountdown.textContent = "Expired"; reservationMessage.textContent = "This reservation has expired. Return to your cart to start a new checkout."; }
+    else if (message.includes("PAYMENT_INITIALIZATION_FAILED")) setStatus("Your order is reserved, but payment could not be opened. Please try again.", "error");
+    else setStatus("We could not prepare the payment. Please try again.", "error");
   }
 });
 
-init().catch((error) => {
-  console.error(error);
-  setStatus("We could not prepare checkout. Please try again.", "error");
-});
+init().catch((error) => { console.error(error); setStatus("We could not prepare checkout. Please try again.", "error"); });
