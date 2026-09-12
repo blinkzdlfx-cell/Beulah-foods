@@ -71,6 +71,45 @@ export async function getCategories() {
   });
 }
 
+export async function getFeaturedProducts({ limit = 4 } = {}) {
+  const safeLimit = Math.min(12, Math.max(1, Number.parseInt(limit, 10) || 4));
+  return getFresh(async () => {
+    const { data, error } = await supabase
+      .from("products")
+      .select("id, category_id, name, slug, description, price, image_url, stock_quantity, reserved_quantity, is_featured, categories(name, slug)")
+      .eq("is_active", true)
+      .eq("is_featured", true)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true })
+      .limit(safeLimit);
+    if (error) throw error;
+    return (data ?? []).map((product) => ({
+      ...withAvailableStock(product),
+      image_src: getProductImageUrl(product.image_url),
+    }));
+  });
+}
+
+export async function getHomepageCategories({ limit = 6 } = {}) {
+  const safeLimit = Math.min(12, Math.max(1, Number.parseInt(limit, 10) || 6));
+  return getFresh(async () => {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id, name, slug, description, sort_order, products!inner(id)")
+      .eq("is_active", true)
+      .eq("products.is_active", true)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true })
+      .limit(safeLimit);
+    if (error) throw error;
+
+    return (data ?? []).map(({ products, ...category }) => ({
+      ...category,
+      product_count: Array.isArray(products) ? products.length : 0,
+    }));
+  });
+}
+
 export async function getProducts({ categorySlug = "", page = 1, pageSize = 12 } = {}) {
   const safePage = Math.max(1, Number.parseInt(page, 10) || 1);
   const safePageSize = Math.min(50, Math.max(1, Number.parseInt(pageSize, 10) || 12));
