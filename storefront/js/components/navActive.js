@@ -4,6 +4,18 @@ const ACTIVE_PATHS = new Map([
   ["cart", new Set(["/cart", "/checkout", "/payment-callback"])],
 ]);
 
+function ensureStyles() {
+  if (document.getElementById("beulah-active-nav-styles")) return;
+  const style = document.createElement("style");
+  style.id = "beulah-active-nav-styles";
+  style.textContent = `
+    .site-header__links > a.is-active { position:relative; color:var(--color-text); }
+    .site-header__links > a.is-active::after { content:""; position:absolute; left:11px; right:11px; bottom:2px; height:2px; border-radius:999px; background:var(--color-accent); }
+    .site-header__menu-link.is-active { background:var(--color-accent-soft) !important; color:var(--color-accent-dark) !important; }
+  `;
+  document.head.append(style);
+}
+
 function normalizePath(pathname) {
   const path = pathname.replace(/\/+$/, "") || "/";
   return path.replace(/\.html$/, "");
@@ -35,6 +47,7 @@ function updateActiveNavigation() {
 }
 
 function init() {
+  ensureStyles();
   updateActiveNavigation();
   const nav = document.getElementById("site-header-nav");
   if (!nav) return;
