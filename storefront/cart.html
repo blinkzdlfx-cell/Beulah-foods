@@ -25,7 +25,8 @@
 
   <main class="cart-page">
     <section class="cart-heading">
-      <p class="eyebrow">Your order</p>
+      <a class="cart-back" href="shop.html"><span aria-hidden="true">←</span> Shop</a>
+      <p class="eyebrow">Cart</p>
       <h1>Your cart.</h1>
       <p>Choose what you want to buy now. Anything you leave unselected stays in your cart.</p>
     </section>
@@ -35,8 +36,11 @@
     <div class="cart-content">
       <section class="cart-list-wrap">
         <div id="cart-select-bar" class="cart-select-bar" hidden>
+          <div class="cart-select-bar__title">
+            <strong>Selected items</strong>
+            <span id="cart-selected-count" class="cart-selected-count">0 selected</span>
+          </div>
           <label class="cart-select-all"><input id="cart-select-all" type="checkbox" checked> <span>Select all</span></label>
-          <span id="cart-selected-count" class="cart-selected-count">0 selected</span>
         </div>
         <section id="cart-list" class="cart-list" aria-label="Cart items"></section>
       </section>
