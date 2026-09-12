@@ -4,6 +4,15 @@ import { getCurrentSession } from "./authService.js";
 const CHECKOUT_ORDER_KEY = "beulah_checkout_order";
 
 async function syncCheckoutOrderHint() {
+  // Hydrate the durable authenticated cart before checkout.js reads it. This
+  // lets checkout survive a cleared browser cart cache as well.
+  try {
+    const { hydrateCartFromDatabase } = await import("./cartService.js");
+    await hydrateCartFromDatabase();
+  } catch (error) {
+    console.error("Could not hydrate cart before checkout:", error);
+  }
+
   const params = new URLSearchParams(location.search);
   const hasExplicitCartSelection = params.get("items")?.trim();
 
@@ -74,5 +83,6 @@ async function syncCheckoutOrderHint() {
 }
 
 // Top-level await makes checkout.js start only after the database-backed
-// checkout locator has been refreshed. localStorage is now only a locator/cache.
+// cart and checkout locator have been refreshed. Browser storage is only a
+// cache/locator, not the authority for order or cart state.
 await syncCheckoutOrderHint();
