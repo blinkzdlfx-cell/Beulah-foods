@@ -11,15 +11,18 @@ if (form && submit) {
 
     const id = document.getElementById("delivery-id").value;
     const deliveryEnabled = document.getElementById("delivery-enabled").checked;
-    const freeDeliveryEnabled = document.getElementById("free-delivery-enabled").checked;
     const active = document.getElementById("delivery-active").checked;
     const feeValue = document.getElementById("delivery-fee").value.trim();
-    const thresholdValue = document.getElementById("delivery-threshold").value.trim();
 
     try {
-      if (freeDeliveryEnabled && !deliveryEnabled) throw new Error("Enable delivery charges before enabling free delivery.");
-      if (deliveryEnabled && feeValue === "") throw new Error("Enter a delivery fee or turn off delivery charges.");
-      if (freeDeliveryEnabled && thresholdValue === "") throw new Error("Enter a free-delivery threshold or turn off the free-delivery option.");
+      if (deliveryEnabled && feeValue === "") {
+        throw new Error("Enter a delivery fee or turn off delivery.");
+      }
+
+      const fee = feeValue === "" ? null : Number(feeValue);
+      if (fee !== null && (!Number.isFinite(fee) || fee < 0)) {
+        throw new Error("Enter a valid delivery fee.");
+      }
 
       submit.disabled = true;
       submit.textContent = "Saving…";
@@ -33,10 +36,11 @@ if (form && submit) {
       }
 
       const payload = {
-        delivery_fee: feeValue === "" ? null : Number(feeValue),
-        free_delivery_threshold: thresholdValue === "" ? null : Number(thresholdValue),
+        delivery_fee: fee,
         is_delivery_enabled: deliveryEnabled,
-        is_free_delivery_enabled: freeDeliveryEnabled,
+        // Free-delivery settings are no longer part of the active business model.
+        is_free_delivery_enabled: false,
+        free_delivery_threshold: null,
         is_active: active,
         updated_at: new Date().toISOString(),
       };
