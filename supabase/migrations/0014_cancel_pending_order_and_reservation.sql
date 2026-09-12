@@ -4,6 +4,13 @@
 -- Expired reservations are marked expired; explicit customer cancellation is
 -- marked cancelled. Both paths restore stock exactly once.
 
+alter table public.reservations
+  drop constraint if exists reservations_status_check;
+
+alter table public.reservations
+  add constraint reservations_status_check
+  check (status in ('active','expired','confirmed','cancelled'));
+
 create or replace function public.cancel_pending_order(target_order_id uuid)
 returns jsonb
 language plpgsql
