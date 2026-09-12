@@ -1,5 +1,6 @@
 import { getCurrentSession } from "../services/authService.js";
-import { clearCart } from "../services/cartService.js";
+import { removeCartItems } from "../services/cartService.js";
+import { supabase } from "../lib/supabaseClient.js";
 
 const title = document.getElementById("payment-title");
 const message = document.getElementById("payment-message");
@@ -9,6 +10,12 @@ const reference = new URLSearchParams(window.location.search).get("reference");
 function show(text, type = "") {
   status.textContent = text;
   status.className = `alert${type ? ` alert-${type}` : ""}`;
+}
+
+async function removePaidItems(orderId, session) {
+  const { data: items, error } = await supabase.from("order_items").select("product_id").eq("order_id", orderId);
+  if (error) throw error;
+  removeCartItems((items || []).map((item) => item.product_id).filter(Boolean));
 }
 
 async function init() {
@@ -28,17 +35,15 @@ async function init() {
   }
 
   try {
-    const response = await fetch(`/api/paystack/verify?reference=${encodeURIComponent(reference)}`, {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    });
+    const response = await fetch(`/api/paystack/verify?reference=${encodeURIComponent(reference)}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data?.error || "PAYMENT_VERIFICATION_FAILED");
 
     if (data.payment_status === "successful") {
-      clearCart();
+      if (data.order_id) await removePaidItems(data.order_id, session);
       title.textContent = "Payment confirmed";
       message.textContent = "Your payment has been verified. Your order is now paid.";
-      show(`Order ${String(data.order_id).slice(0, 8)} is confirmed.`, "success");
+      show(`${data.order_number ? `Order ${data.order_number}` : `Order ${String(data.order_id).slice(0, 8)}`} is confirmed.`, "success");
       if (data.order_id) setTimeout(() => { window.location.href = `/order.html?id=${encodeURIComponent(data.order_id)}`; }, 1200);
       return;
     }
