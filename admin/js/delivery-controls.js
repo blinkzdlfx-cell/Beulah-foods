@@ -52,8 +52,9 @@ if (form && submit) {
         alertBox.className = "alert";
         alertBox.hidden = false;
       }
-
-      window.location.reload();
+      window.dispatchEvent(new CustomEvent("beulah:delivery-saved"));
+      submit.disabled = false;
+      submit.textContent = "Save delivery settings";
     } catch (error) {
       if (alertBox) {
         alertBox.textContent = error?.message || "Could not save delivery settings.";
