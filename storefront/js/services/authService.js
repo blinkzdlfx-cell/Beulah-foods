@@ -10,11 +10,17 @@
 import { supabase } from "../lib/supabaseClient.js";
 
 export async function signUpCustomer({ fullName, email, password }) {
+  const verificationRedirect = new URL(
+    "verification-success.html",
+    `${window.location.origin}/`,
+  ).href;
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { full_name: fullName },
+      emailRedirectTo: verificationRedirect,
     },
   });
   if (error) throw error;
