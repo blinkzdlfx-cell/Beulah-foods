@@ -65,6 +65,7 @@ function renderReservation(entry) {
 
   const card = document.createElement("article");
   card.className = "card reservation-card";
+  card.dataset.reservationId = reservation.id;
   card.innerHTML = `
     <div class="reservation-card__top">
       <div class="reservation-card__identity">
@@ -82,11 +83,38 @@ function renderReservation(entry) {
       ${isOpen(reservation, order) ? `<span>Expires: ${escapeHtml(formatDate(reservation.expires_at))}</span>` : ""}
     </div>
     <div class="reservation-card__actions">
-      ${status === "Open" ? `<a class="btn btn-primary" href="${actionHref}">Continue payment</a>` : status === "Expired" ? `<a class="btn btn-secondary" href="${actionHref}">Retry checkout</a>` : status === "Cancelled" ? `<a class="btn btn-secondary" href="${actionHref}">View reservation</a>` : ""}
+      ${status === "Open" ? `<a class="btn btn-primary" href="${actionHref}">Continue payment</a><button class="btn btn-secondary js-cancel-reservation" type="button" data-order-id="${escapeHtml(order.id)}">Cancel reservation</button>` : status === "Expired" ? `<a class="btn btn-secondary" href="${actionHref}">Retry checkout</a>` : status === "Cancelled" ? `<a class="btn btn-secondary" href="${actionHref}">View reservation</a>` : ""}
     </div>
   `;
   return card;
 }
+
+async function cancelReservation(orderId, button) {
+  if (!orderId) return;
+  if (!window.confirm("Cancel this reservation? Your reserved items will be released.")) return;
+
+  button.disabled = true;
+  button.textContent = "Cancelling…";
+  setAlert("");
+
+  try {
+    const { error } = await supabase.rpc("cancel_pending_order", { target_order_id: orderId });
+    if (error) throw error;
+    await loadReservations();
+    setAlert("Reservation cancelled. The reserved items have been released.", "success");
+  } catch (error) {
+    console.error("Unable to cancel reservation:", error);
+    button.disabled = false;
+    button.textContent = "Cancel reservation";
+    setAlert(error?.message || "Unable to cancel this reservation. Please try again.");
+  }
+}
+
+list.addEventListener("click", (event) => {
+  const button = event.target.closest(".js-cancel-reservation");
+  if (!button) return;
+  cancelReservation(button.dataset.orderId, button);
+});
 
 async function loadReservations() {
   const session = await getCurrentSession();
