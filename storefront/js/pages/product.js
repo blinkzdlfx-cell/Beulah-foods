@@ -1,6 +1,6 @@
 import { initHeader } from "../components/navbar.js";
 import { getProductBySlug } from "../services/catalogService.js";
-import { addToCart } from "../services/cartService.js";
+import { addToCart, getCart } from "../services/cartService.js";
 import { showToast } from "../components/toast.js";
 
 initHeader(document.getElementById("site-header-nav"));
@@ -62,7 +62,16 @@ async function init() {
     root.innerHTML = `<a class="product-back" href="shop.html">← Back to shop</a><div class="${gridClass}">${media}<div class="product-detail__content"><p class="eyebrow">Beulah Foods product</p><h1>${escapeHtml(product.name)}</h1><strong class="product-detail__price">${naira.format(Number(product.price))}</strong><p class="product-detail__description">${escapeHtml(product.description ?? "")}</p><p class="product-detail__stock ${inStock ? "" : "is-unavailable"}">${inStock ? `${stock} available to order` : "Currently unavailable"}</p><div class="product-detail__actions"><label class="quantity-control"><span>Quantity</span><input id="product-quantity" type="number" min="1" max="${stock}" value="1" inputmode="numeric" ${disabled}></label><button class="btn btn-primary" id="add-product" type="button" ${disabled}>${inStock ? "Add to cart" : "Unavailable"}</button></div><p class="product-detail__note">Final availability and pricing are rechecked from the live catalogue during checkout.</p><div id="product-feedback" class="product-feedback" role="status" aria-live="polite"></div></div></div>`;
     document.getElementById("add-product")?.addEventListener("click", () => {
       const input = document.getElementById("product-quantity");
-      const quantity = Math.max(1, Math.min(stock, Number.parseInt(input.value, 10) || 1));
+      const requested = Math.max(1, Number.parseInt(input.value, 10) || 1);
+      const existing = getCart().find((item) => String(item.productId) === String(product.id));
+      const currentQuantity = Number(existing?.quantity) || 0;
+      const remaining = Math.max(0, stock - currentQuantity);
+      if (remaining <= 0) {
+        showToast(`You already have the maximum available quantity of ${product.name} in your cart.`, "error");
+        input.value = String(Math.max(1, stock));
+        return;
+      }
+      const quantity = Math.min(requested, remaining);
       input.value = String(quantity);
       try {
         addToCart(product.id, quantity);
