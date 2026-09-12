@@ -52,7 +52,7 @@ function renderProducts(products) {
     const media = product.image_src
       ? `<a class="product-card__media" href="${detailUrl}" aria-label="View ${escapeAttribute(product.name)}"><img class="product-card__image" src="${escapeAttribute(product.image_src)}" alt="${escapeAttribute(product.name)}" loading="lazy"></a>`
       : "";
-    card.innerHTML = `<div class="product-card__body">${media}<p class="product-card__availability ${inStock ? "" : "is-unavailable"}">${inStock ? `${stock} available` : "Currently unavailable"}</p><h2><a href="${detailUrl}">${escapeHtml(product.name)}</a></h2><p class="product-card__description">${escapeHtml(product.description ?? "")}</p><div class="product-card__footer"><strong>${naira.format(Number(product.price))}</strong><button class="btn btn-primary product-card__add" type="button" data-product-id="${escapeAttribute(product.id)}" ${inStock ? "" : "disabled"}>${inStock ? "Add to cart" : "Unavailable"}</button></div></div>`;
+    card.innerHTML = `${media}<div class="product-card__body"><p class="product-card__availability ${inStock ? "" : "is-unavailable"}">${inStock ? `${stock} available` : "Currently unavailable"}</p><h2><a href="${detailUrl}">${escapeHtml(product.name)}</a></h2><p class="product-card__description">${escapeHtml(product.description ?? "")}</p><div class="product-card__footer"><strong>${naira.format(Number(product.price))}</strong><button class="btn btn-primary product-card__add" type="button" data-product-id="${escapeAttribute(product.id)}" ${inStock ? "" : "disabled"}>${inStock ? "Add to cart" : "Unavailable"}</button></div></div>`;
     card.querySelector(".product-card__add")?.addEventListener("click", () => {
       try {
         const existing = getCart().find((item) => String(item.productId) === String(product.id));
@@ -76,8 +76,7 @@ function renderPagination(result) {
   pagination.innerHTML = "";
   if (result.totalPages <= 1) return;
   const fragment = document.createDocumentFragment();
-  const previous = document.createElement("button");
-  previous.className = "btn btn-secondary"; previous.type = "button"; previous.textContent = "Previous"; previous.disabled = result.page <= 1;
+  const previous = document.createElement("button"); previous.className = "btn btn-secondary"; previous.type = "button"; previous.textContent = "Previous"; previous.disabled = result.page <= 1;
   previous.addEventListener("click", () => { currentPage -= 1; loadProducts(); });
   fragment.append(previous);
   const label = document.createElement("span"); label.className = "shop-pagination__label"; label.textContent = `Page ${result.page} of ${result.totalPages}`; fragment.append(label);
