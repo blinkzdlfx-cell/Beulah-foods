@@ -37,8 +37,6 @@ async function getOrRefresh(key, fetcher) {
   return data;
 }
 
-// Inventory is transactional data. Never serve stock_quantity from the
-// session cache because checkout/reservation can change it immediately.
 async function getFresh(fetcher) {
   return fetcher();
 }
@@ -46,10 +44,7 @@ async function getFresh(fetcher) {
 function withAvailableStock(product) {
   const physicalStock = Math.max(0, Number(product.stock_quantity) || 0);
   const reservedStock = Math.max(0, Number(product.reserved_quantity) || 0);
-  return {
-    ...product,
-    stock_quantity: Math.max(0, physicalStock - reservedStock),
-  };
+  return { ...product, stock_quantity: Math.max(0, physicalStock - reservedStock) };
 }
 
 export function getProductImageUrl(imagePath) {
@@ -83,30 +78,37 @@ export async function getFeaturedProducts({ limit = 4 } = {}) {
       .order("name", { ascending: true })
       .limit(safeLimit);
     if (error) throw error;
-    return (data ?? []).map((product) => ({
-      ...withAvailableStock(product),
-      image_src: getProductImageUrl(product.image_url),
-    }));
+    return (data ?? []).map((product) => ({ ...withAvailableStock(product), image_src: getProductImageUrl(product.image_url) }));
   });
 }
 
 export async function getHomepageCategories({ limit = 6 } = {}) {
   const safeLimit = Math.min(12, Math.max(1, Number.parseInt(limit, 10) || 6));
   return getFresh(async () => {
-    const { data, error } = await supabase
+    const { data: categories, error: categoryError } = await supabase
       .from("categories")
-      .select("id, name, slug, description, sort_order, products!inner(id)")
+      .select("id, name, slug, description, sort_order")
       .eq("is_active", true)
-      .eq("products.is_active", true)
       .order("sort_order", { ascending: true })
-      .order("name", { ascending: true })
-      .limit(safeLimit);
-    if (error) throw error;
+      .order("name", { ascending: true });
+    if (categoryError) throw categoryError;
 
-    return (data ?? []).map(({ products, ...category }) => ({
-      ...category,
-      product_count: Array.isArray(products) ? products.length : 0,
-    }));
+    const { data: products, error: productError } = await supabase
+      .from("products")
+      .select("category_id")
+      .eq("is_active", true)
+      .not("category_id", "is", null);
+    if (productError) throw productError;
+
+    const counts = new Map();
+    for (const product of products ?? []) {
+      counts.set(product.category_id, (counts.get(product.category_id) ?? 0) + 1);
+    }
+
+    return (categories ?? [])
+      .map((category) => ({ ...category, product_count: counts.get(category.id) ?? 0 }))
+      .filter((category) => category.product_count > 0)
+      .slice(0, safeLimit);
   });
 }
 
@@ -123,12 +125,7 @@ export async function getProducts({ categorySlug = "", page = 1, pageSize = 12 }
       .order("name", { ascending: true });
 
     if (categorySlug) {
-      const { data: category, error: categoryError } = await supabase
-        .from("categories")
-        .select("id")
-        .eq("slug", categorySlug)
-        .eq("is_active", true)
-        .maybeSingle();
+      const { data: category, error: categoryError } = await supabase.from("categories").select("id").eq("slug", categorySlug).eq("is_active", true).maybeSingle();
       if (categoryError) throw categoryError;
       if (!category) return { products: [], count: 0, page: safePage, pageSize: safePageSize, totalPages: 0 };
       query = query.eq("category_id", category.id);
@@ -151,13 +148,8 @@ export async function getProducts({ categorySlug = "", page = 1, pageSize = 12 }
 export async function getProductsByIds(ids = []) {
   const productIds = [...new Set(ids.map(String).filter(Boolean))].sort();
   if (!productIds.length) return [];
-
   return getFresh(async () => {
-    const { data, error } = await supabase
-      .from("products")
-      .select("id, category_id, name, slug, description, price, image_url, stock_quantity, reserved_quantity")
-      .in("id", productIds)
-      .eq("is_active", true);
+    const { data, error } = await supabase.from("products").select("id, category_id, name, slug, description, price, image_url, stock_quantity, reserved_quantity").in("id", productIds).eq("is_active", true);
     if (error) throw error;
     return (data ?? []).map((product) => ({ ...withAvailableStock(product), image_src: getProductImageUrl(product.image_url) }));
   });
@@ -165,12 +157,7 @@ export async function getProductsByIds(ids = []) {
 
 export async function getProductBySlug(slug) {
   return getFresh(async () => {
-    const { data, error } = await supabase
-      .from("products")
-      .select("id, category_id, name, slug, description, price, image_url, stock_quantity, reserved_quantity")
-      .eq("slug", slug)
-      .eq("is_active", true)
-      .maybeSingle();
+    const { data, error } = await supabase.from("products").select("id, category_id, name, slug, description, price, image_url, stock_quantity, reserved_quantity").eq("slug", slug).eq("is_active", true).maybeSingle();
     if (error) throw error;
     return data ? { ...withAvailableStock(data), image_src: getProductImageUrl(data.image_url) } : data;
   });
