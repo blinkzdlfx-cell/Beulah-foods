@@ -1,6 +1,6 @@
 import { initHeader } from "../components/navbar.js";
 import { getProductsByIds } from "../services/catalogService.js";
-import { getCart, updateCartQuantity, removeFromCart } from "../services/cartService.js";
+import { getCart, hydrateCartFromDatabase, updateCartQuantity, removeFromCart } from "../services/cartService.js";
 import { showToast } from "../components/toast.js";
 
 initHeader(document.getElementById("site-header-nav"));
@@ -58,6 +58,7 @@ async function render() {
 
     for (const item of validItems) {
       const product = item.product, max = Math.max(1, Number(product.stock_quantity) || 1), quantity = Math.min(item.quantity, max);
+      if (item.quantity !== quantity) updateCartQuantity(product.id, quantity);
       const row = document.createElement("article");
       row.className = `cart-item${selection.has(String(product.id)) ? " is-selected" : ""}`;
       const media = product.image_src ? `<a class="cart-item__media" href="product.html?slug=${encodeURIComponent(product.slug)}"><img src="${escapeHtml(product.image_src)}" alt="${escapeHtml(product.name)}"></a>` : "";
@@ -94,4 +95,7 @@ selectAll.addEventListener("change", () => {
   render();
 });
 
-render();
+(async function init() {
+  await hydrateCartFromDatabase();
+  await render();
+})();
