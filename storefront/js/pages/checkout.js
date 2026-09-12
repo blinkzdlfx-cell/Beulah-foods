@@ -2,7 +2,7 @@ import { initHeader } from "../components/navbar.js";
 import { getCurrentSession } from "../services/authService.js";
 import { getCustomerProfile } from "../services/profileService.js";
 import { getProductsByIds } from "../services/catalogService.js";
-import { getCart } from "../services/cartService.js";
+import { getCart, removeCartItems } from "../services/cartService.js";
 import { supabase } from "../lib/supabaseClient.js";
 
 initHeader(document.getElementById("site-header-nav"));
@@ -73,7 +73,7 @@ function renderProfile(profile) {
   fullNameEl.textContent = customerProfile?.full_name?.trim() || "—";
   phoneEl.textContent = customerProfile?.phone?.trim() || "—";
   addressEl.textContent = customerProfile?.address?.trim() || "—";
-  if (!complete) setStatus("Add your delivery details in My Account before continuing.", "error");
+  if (!complete) setStatus("Add your delivery details in My Account to continue.", "error");
   else if (!pendingReservation) setStatus("");
 }
 
@@ -143,7 +143,7 @@ function setReservationState(state, order) {
     reservationBox.classList.add("is-expired");
     reservationEyebrow.textContent = "Order expired";
     reservationTitle.textContent = "Your reservation has expired.";
-    reservationMessage.textContent = "The 15-minute payment window ended, so these items are no longer reserved. Retry checkout to reserve them again if stock is available.";
+    reservationMessage.textContent = "The 15-minute payment window has ended, so these items are no longer reserved. Retry checkout to reserve them again if they are still available.";
     reservationCountdown.textContent = "Expired";
     retryReservation.hidden = false;
     return;
@@ -152,7 +152,7 @@ function setReservationState(state, order) {
   reservationBox.classList.add("is-cancelled");
   reservationEyebrow.textContent = "Order cancelled";
   reservationTitle.textContent = "Your order was cancelled.";
-  reservationMessage.textContent = "The reservation has been cancelled and the items have been released. Your cart is still available if you want to start again.";
+  reservationMessage.textContent = "The reservation has been cancelled and the items have been released. Add them to your cart again if you still want them.";
   reservationCountdown.hidden = true;
   returnToCart.hidden = false;
 }
@@ -402,7 +402,7 @@ async function retryExpiredReservation() {
       clearRememberedCheckoutOrder();
       pendingOrderId = null;
       pendingReservation = null;
-      setStatus("This reservation is no longer available. Please return to your cart and start checkout again.", "error");
+      setStatus("This reservation is no longer available. Return to your cart and start checkout again.", "error");
       return;
     }
     setStatus(error?.message || "Could not prepare checkout. Please try again.", "error");
@@ -421,7 +421,7 @@ form.addEventListener("submit", async (event) => {
     return;
   }
   if (!hasCompleteDeliveryProfile(customerProfile)) {
-    setStatus("Add your delivery details in My Account before continuing.", "error");
+    setStatus("Add your delivery details in My Account to continue.", "error");
     return;
   }
   submit.disabled = true;
@@ -429,6 +429,7 @@ form.addEventListener("submit", async (event) => {
   try {
     if (!pendingOrderId) {
       const cartItems = checkoutItems.map(({ productId, quantity }) => ({ productId, quantity }));
+      const reservedProductIds = checkoutItems.map((item) => String(item.productId));
       const { data, error } = await supabase.rpc("create_pending_order", {
         cart_items: cartItems,
         delivery_name: customerProfile.full_name.trim(),
@@ -439,6 +440,7 @@ form.addEventListener("submit", async (event) => {
       if (error) throw error;
       pendingOrderId = data.order_id;
       pendingReservation = { id: data.reservation_id, order_id: data.order_id, expires_at: data.expires_at };
+      removeCartItems(reservedProductIds);
       rememberCheckoutSelection(checkoutItems);
       rememberCheckoutOrder(pendingOrderId);
       renderSummary(data);
@@ -461,9 +463,9 @@ form.addEventListener("submit", async (event) => {
     submit.disabled = false;
     submit.textContent = pendingOrderId ? "Continue to payment" : "Confirm order & reserve items";
     const message = error?.message ?? "";
-    if (message.includes("INSUFFICIENT_STOCK")) setStatus("One or more products no longer have enough stock. Please return to your cart and adjust the quantities.", "error");
+    if (message.includes("INSUFFICIENT_STOCK")) setStatus("One or more products do not have enough stock. Return to your cart and adjust the quantity.", "error");
     else if (message.includes("PRODUCT_UNAVAILABLE")) setStatus("One or more products are no longer available. Please return to your cart.", "error");
-    else if (message.includes("DELIVERY_DETAILS_REQUIRED")) setStatus("Add your delivery details in My Account before continuing.", "error");
+    else if (message.includes("DELIVERY_DETAILS_REQUIRED")) setStatus("Add your delivery details in My Account to continue.", "error");
     else if (message.includes("DELIVERY_CONFIGURATION_INVALID")) setStatus("Delivery is temporarily unavailable. Please try again later.", "error");
     else if (message.includes("PROMO_INVALID")) setStatus("That promo code is invalid or inactive.", "error");
     else if (message.includes("PROMO_MINIMUM_NOT_MET")) setStatus("This promo code does not meet the minimum order amount.", "error");
@@ -472,7 +474,7 @@ form.addEventListener("submit", async (event) => {
       form.hidden = true;
       setStatus("Your payment reservation has expired. Retry checkout to reserve the items again.", "error");
     } else if (message.includes("PAYMENT_INITIALIZATION_FAILED")) setStatus("Your order is reserved, but payment could not be opened. Please try again.", "error");
-    else setStatus("We could not prepare the order or payment. Please try again.", "error");
+    else setStatus("We could not prepare your order or payment. Please try again.", "error");
   }
 });
 
