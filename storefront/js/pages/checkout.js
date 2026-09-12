@@ -28,10 +28,12 @@ const reservationOrder = document.getElementById("checkout-reservation-order");
 const reservationCountdown = document.getElementById("checkout-reservation-countdown");
 const reservationMessage = document.getElementById("checkout-reservation-message");
 const promoInput = document.getElementById("promo-code");
+const confirmNote = document.getElementById("checkout-confirm-note");
 const naira = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 });
 let checkoutItems = [];
 let deliverySettings = null;
 let pendingOrderId = null;
+let pendingOrderNumber = null;
 let pendingReservation = null;
 let currentSession = null;
 let customerProfile = null;
@@ -64,6 +66,11 @@ function renderProfile(profile) {
   else if (!pendingReservation) setStatus("");
 }
 
+function getSelectedProductIds() {
+  const raw = new URLSearchParams(window.location.search).get("items");
+  return new Set((raw ? raw.split(",") : []).map((id) => id.trim()).filter(Boolean));
+}
+
 async function init() {
   currentSession = await getCurrentSession();
   if (!currentSession?.user) {
@@ -77,6 +84,7 @@ async function init() {
 
   if (pending) {
     pendingOrderId = pending.order.id;
+    pendingOrderNumber = pending.order.order_number;
     pendingReservation = pending.reservation;
     checkoutItems = pending.items;
     renderPendingOrder(pending.order);
@@ -93,25 +101,26 @@ async function init() {
     return;
   }
 
+  const selectedIds = getSelectedProductIds();
+  const sourceItems = selectedIds.size ? cart.filter((item) => selectedIds.has(String(item.productId))) : cart;
+  if (!sourceItems.length) {
+    setStatus("No valid cart items were selected. Return to your cart and choose what to buy.", "error");
+    form.hidden = true;
+    return;
+  }
+
   const [products, deliveryResult] = await Promise.all([
-    getProductsByIds(cart.map((item) => item.productId)),
-    supabase
-      .from("delivery_settings")
-      .select("delivery_fee,is_delivery_enabled")
-      .eq("is_active", true)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+    getProductsByIds(sourceItems.map((item) => item.productId)),
+    supabase.from("delivery_settings").select("delivery_fee,is_delivery_enabled").eq("is_active", true).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
   if (deliveryResult.error) throw deliveryResult.error;
   deliverySettings = deliveryResult.data;
-
   const productMap = new Map(products.map((product) => [String(product.id), product]));
-  checkoutItems = cart.map((item) => ({ ...item, product: productMap.get(item.productId) })).filter((item) => item.product);
+  checkoutItems = sourceItems.map((item) => ({ ...item, product: productMap.get(item.productId) })).filter((item) => item.product);
 
   if (!checkoutItems.length) {
-    setStatus("The products in your cart are no longer available. Please return to the shop.", "error");
+    setStatus("The selected products are no longer available. Please return to your cart.", "error");
     form.hidden = true;
     return;
   }
@@ -128,7 +137,7 @@ async function findActivePendingOrder() {
   const reservation = reservations?.[0];
   if (!reservation) return null;
 
-  const { data: order, error: orderError } = await supabase.from("orders").select("id,status,payment_status,subtotal,delivery_fee,discount_amount,total,promo_code,created_at").eq("id", reservation.order_id).eq("status", "pending_payment").eq("payment_status", "pending").maybeSingle();
+  const { data: order, error: orderError } = await supabase.from("orders").select("id,order_number,status,payment_status,subtotal,delivery_fee,discount_amount,total,promo_code,created_at").eq("id", reservation.order_id).eq("status", "pending_payment").eq("payment_status", "pending").maybeSingle();
   if (orderError) throw orderError;
   if (!order) return null;
 
@@ -143,9 +152,10 @@ function renderPendingOrder(order) {
   renderSummary({ subtotal: order.subtotal, delivery_fee: order.delivery_fee, delivery_enabled: Number(order.delivery_fee) > 0, discount: order.discount_amount, total: order.total });
   promoInput.value = order.promo_code || "";
   promoInput.disabled = true;
-  submit.textContent = "Retry payment";
+  submit.textContent = "Continue to payment";
+  confirmNote.textContent = "Your order is reserved. Continue to Paystack to complete payment.";
   reservationBox.hidden = false;
-  reservationOrder.textContent = `Order ${String(order.id).slice(0, 8)}`;
+  reservationOrder.textContent = order.order_number || `Order ${String(order.id).slice(0, 8)}`;
   reservationMessage.textContent = "Your items are reserved while you complete payment.";
 }
 
@@ -178,18 +188,9 @@ function updateReservationCountdown() {
   reservationCountdown.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-function isDeliveryEnabled() {
-  return Boolean(deliverySettings?.is_delivery_enabled);
-}
-
-function calculateLocalDelivery() {
-  if (!isDeliveryEnabled()) return 0;
-  return Math.max(0, Number(deliverySettings?.delivery_fee ?? 0));
-}
-
-function getLocalSubtotal() {
-  return checkoutItems.reduce((total, item) => total + Number(item.product.price) * Math.max(1, Number.parseInt(item.quantity, 10) || 1), 0);
-}
+function isDeliveryEnabled() { return Boolean(deliverySettings?.is_delivery_enabled); }
+function calculateLocalDelivery() { return isDeliveryEnabled() ? Math.max(0, Number(deliverySettings?.delivery_fee ?? 0)) : 0; }
+function getLocalSubtotal() { return checkoutItems.reduce((total, item) => total + Number(item.product.price) * Math.max(1, Number.parseInt(item.quantity, 10) || 1), 0); }
 
 function renderSummary(totals = null) {
   summary.innerHTML = "";
@@ -207,7 +208,6 @@ function renderSummary(totals = null) {
   const delivery = totals ? Number(totals.delivery_fee) : calculateLocalDelivery();
   const discount = totals ? Number(totals.discount) : 0;
   const total = totals ? Number(totals.total) : subtotal + delivery - discount;
-
   subtotalEl.textContent = naira.format(subtotal);
   deliveryRow.hidden = !deliveryEnabled;
   deliveryEl.textContent = delivery === 0 ? "Free" : naira.format(delivery);
@@ -231,28 +231,35 @@ form.addEventListener("submit", async (event) => {
   if (!hasCompleteDeliveryProfile(customerProfile)) { setStatus("Add your delivery details in My Account before continuing.", "error"); return; }
 
   submit.disabled = true;
-  submit.textContent = pendingOrderId ? "Opening payment…" : "Preparing payment…";
+  submit.textContent = pendingOrderId ? "Opening payment…" : "Creating order…";
   try {
     if (!pendingOrderId) {
       const cartItems = checkoutItems.map(({ productId, quantity }) => ({ productId, quantity }));
       const { data, error } = await supabase.rpc("create_pending_order", { cart_items: cartItems, delivery_name: customerProfile.full_name.trim(), delivery_phone: customerProfile.phone.trim(), delivery_address: customerProfile.address.trim(), requested_promo_code: promoInput.value.trim() || null });
       if (error) throw error;
       pendingOrderId = data.order_id;
+      pendingOrderNumber = data.order_number;
       pendingReservation = { id: data.reservation_id, order_id: data.order_id, expires_at: data.expires_at };
       renderSummary(data);
       reservationBox.hidden = false;
       reservationBox.classList.remove("is-expired");
-      reservationOrder.textContent = `Order ${String(data.order_id).slice(0, 8)}`;
-      reservationMessage.textContent = "Your items are reserved while you complete payment.";
+      reservationOrder.textContent = data.order_number || `Order ${String(data.order_id).slice(0, 8)}`;
+      reservationMessage.textContent = "Your order has been placed and the selected items are reserved for 15 minutes.";
+      confirmNote.textContent = "Your order is reserved. Continue to Paystack to complete payment.";
+      submit.textContent = "Continue to payment";
       startReservationCountdown();
       promoInput.disabled = true;
+      submit.disabled = false;
+      setStatus(`Order ${data.order_number || "created"} is reserved. Continue to payment when ready.`, "success");
+      return;
     }
+
     await initializePayment(pendingOrderId);
   } catch (error) {
     console.error(error);
     if (error?.code === "ORDER_NOT_PAYABLE" || error?.code === "ORDER_RESERVATION_EXPIRED") pendingOrderId = null;
     submit.disabled = false;
-    submit.textContent = pendingOrderId ? "Retry payment" : "Continue to payment";
+    submit.textContent = pendingOrderId ? "Continue to payment" : "Confirm order & reserve items";
     const message = error?.message ?? "";
     if (message.includes("INSUFFICIENT_STOCK")) setStatus("One or more products no longer have enough stock. Please return to your cart and adjust the quantities.", "error");
     else if (message.includes("PRODUCT_UNAVAILABLE")) setStatus("One or more products are no longer available. Please return to your cart.", "error");
@@ -262,7 +269,7 @@ form.addEventListener("submit", async (event) => {
     else if (message.includes("PROMO_MINIMUM_NOT_MET")) setStatus("This promo code does not meet the minimum order amount.", "error");
     else if (message.includes("ORDER_RESERVATION_EXPIRED")) { setStatus("Your payment reservation has expired. Return to your cart to start a new checkout.", "error"); reservationBox.classList.add("is-expired"); reservationCountdown.textContent = "Expired"; reservationMessage.textContent = "This reservation has expired. Return to your cart to start a new checkout."; }
     else if (message.includes("PAYMENT_INITIALIZATION_FAILED")) setStatus("Your order is reserved, but payment could not be opened. Please try again.", "error");
-    else setStatus("We could not prepare the payment. Please try again.", "error");
+    else setStatus("We could not prepare the order or payment. Please try again.", "error");
   }
 });
 
