@@ -24,15 +24,15 @@
   <main class="checkout-page">
     <section class="checkout-heading">
       <p class="eyebrow">Checkout</p>
-      <h1>Complete your order.</h1>
-      <p>Confirm your details and review your order before payment.</p>
+      <h1>Review and confirm.</h1>
+      <p>Confirm your details and order before we reserve your items and open payment.</p>
     </section>
 
     <div id="checkout-reservation" class="checkout-reservation" hidden>
       <div class="checkout-reservation__topline">
         <div>
-          <span class="checkout-reservation__eyebrow">Payment reservation</span>
-          <strong id="checkout-reservation-order">Order reserved</strong>
+          <span class="checkout-reservation__eyebrow">Order reserved</span>
+          <strong id="checkout-reservation-order">BF-58030001</strong>
         </div>
         <strong id="checkout-reservation-countdown" class="checkout-reservation__countdown" aria-live="polite">15:00</strong>
       </div>
@@ -55,18 +55,9 @@
           </div>
 
           <div id="checkout-profile" class="checkout-profile-card" aria-live="polite">
-            <div class="checkout-profile-row">
-              <span class="checkout-profile-label">Full name</span>
-              <strong id="checkout-full-name">—</strong>
-            </div>
-            <div class="checkout-profile-row">
-              <span class="checkout-profile-label">Phone number</span>
-              <strong id="checkout-phone">—</strong>
-            </div>
-            <div class="checkout-profile-row">
-              <span class="checkout-profile-label">Delivery address</span>
-              <strong id="checkout-address">—</strong>
-            </div>
+            <div class="checkout-profile-row"><span class="checkout-profile-label">Full name</span><strong id="checkout-full-name">—</strong></div>
+            <div class="checkout-profile-row"><span class="checkout-profile-label">Phone number</span><strong id="checkout-phone">—</strong></div>
+            <div class="checkout-profile-row"><span class="checkout-profile-label">Delivery address</span><strong id="checkout-address">—</strong></div>
           </div>
 
           <div id="checkout-profile-missing" class="checkout-profile-missing" hidden>
@@ -78,39 +69,23 @@
 
         <section class="checkout-section checkout-promo-section">
           <div class="checkout-section__header">
-            <div>
-              <p class="checkout-section__eyebrow">Savings</p>
-              <h2>Promo code</h2>
-            </div>
+            <div><p class="checkout-section__eyebrow">Savings</p><h2>Promo code</h2></div>
             <span class="checkout-optional">Optional</span>
           </div>
-          <div class="checkout-promo-row">
-            <input id="promo-code" name="promoCode" autocomplete="off" maxlength="50" placeholder="Enter promo code" aria-label="Promo code" />
-          </div>
+          <div class="checkout-promo-row"><input id="promo-code" name="promoCode" autocomplete="off" maxlength="50" placeholder="Enter promo code" aria-label="Promo code" /></div>
         </section>
 
-        <button id="checkout-submit" class="btn btn-primary checkout-submit" type="submit" disabled>Continue to payment</button>
+        <div class="checkout-confirm-note" id="checkout-confirm-note">Confirming this order will reserve these items for 15 minutes while you complete payment.</div>
+        <button id="checkout-submit" class="btn btn-primary checkout-submit" type="submit" disabled>Confirm order &amp; reserve items</button>
       </form>
 
       <aside class="checkout-card card">
         <h2>Order summary</h2>
         <div id="checkout-items" class="checkout-items"></div>
-        <div class="cart-summary__row">
-          <span>Subtotal</span>
-          <strong id="checkout-subtotal">₦0.00</strong>
-        </div>
-        <div id="checkout-delivery-row" class="cart-summary__row" hidden>
-          <span>Delivery</span>
-          <strong id="checkout-delivery">—</strong>
-        </div>
-        <div id="checkout-discount-row" class="cart-summary__row" hidden>
-          <span>Discount</span>
-          <strong id="checkout-discount">—</strong>
-        </div>
-        <div class="cart-summary__row cart-summary__row--total">
-          <span>Total</span>
-          <strong id="checkout-total">₦0.00</strong>
-        </div>
+        <div class="cart-summary__row"><span>Subtotal</span><strong id="checkout-subtotal">₦0.00</strong></div>
+        <div id="checkout-delivery-row" class="cart-summary__row" hidden><span>Delivery</span><strong id="checkout-delivery">—</strong></div>
+        <div id="checkout-discount-row" class="cart-summary__row" hidden><span>Discount</span><strong id="checkout-discount">—</strong></div>
+        <div class="cart-summary__row cart-summary__row--total"><span>Total</span><strong id="checkout-total">₦0.00</strong></div>
       </aside>
     </div>
   </main>
