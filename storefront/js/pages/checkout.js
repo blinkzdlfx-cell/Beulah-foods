@@ -6,261 +6,74 @@ import { getCart } from "../services/cartService.js";
 import { supabase } from "../lib/supabaseClient.js";
 
 initHeader(document.getElementById("site-header-nav"));
-
-const authNotice = document.getElementById("checkout-auth-notice");
-const form = document.getElementById("checkout-form");
-const summary = document.getElementById("checkout-items");
-const subtotalEl = document.getElementById("checkout-subtotal");
-const deliveryRow = document.getElementById("checkout-delivery-row");
-const deliveryEl = document.getElementById("checkout-delivery");
-const discountRow = document.getElementById("checkout-discount-row");
-const discountEl = document.getElementById("checkout-discount");
-const totalEl = document.getElementById("checkout-total");
-const status = document.getElementById("checkout-status");
-const submit = document.getElementById("checkout-submit");
-const profileCard = document.getElementById("checkout-profile");
-const profileMissing = document.getElementById("checkout-profile-missing");
-const fullNameEl = document.getElementById("checkout-full-name");
-const phoneEl = document.getElementById("checkout-phone");
-const addressEl = document.getElementById("checkout-address");
-const reservationBox = document.getElementById("checkout-reservation");
-const reservationOrder = document.getElementById("checkout-reservation-order");
-const reservationCountdown = document.getElementById("checkout-reservation-countdown");
-const reservationMessage = document.getElementById("checkout-reservation-message");
-const promoInput = document.getElementById("promo-code");
-const confirmNote = document.getElementById("checkout-confirm-note");
+const authNotice = document.getElementById("checkout-auth-notice"), form = document.getElementById("checkout-form"), summary = document.getElementById("checkout-items"), subtotalEl = document.getElementById("checkout-subtotal"), deliveryRow = document.getElementById("checkout-delivery-row"), deliveryEl = document.getElementById("checkout-delivery"), discountRow = document.getElementById("checkout-discount-row"), discountEl = document.getElementById("checkout-discount"), totalEl = document.getElementById("checkout-total"), status = document.getElementById("checkout-status"), submit = document.getElementById("checkout-submit"), profileCard = document.getElementById("checkout-profile"), profileMissing = document.getElementById("checkout-profile-missing"), fullNameEl = document.getElementById("checkout-full-name"), phoneEl = document.getElementById("checkout-phone"), addressEl = document.getElementById("checkout-address"), reservationBox = document.getElementById("checkout-reservation"), reservationOrder = document.getElementById("checkout-reservation-order"), reservationCountdown = document.getElementById("checkout-reservation-countdown"), reservationMessage = document.getElementById("checkout-reservation-message"), promoInput = document.getElementById("promo-code"), confirmNote = document.getElementById("checkout-confirm-note");
 const naira = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 });
-let checkoutItems = [];
-let deliverySettings = null;
-let pendingOrderId = null;
-let pendingOrderNumber = null;
-let pendingReservation = null;
-let currentSession = null;
-let customerProfile = null;
-let reservationTimer = null;
-
-function setStatus(message, type = "") {
-  status.textContent = message;
-  status.className = `checkout-status${type ? ` checkout-status--${type}` : ""}`;
-  status.hidden = !message;
-}
-
-function escapeHtml(value) {
-  return String(value).replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character]));
-}
-
-function hasCompleteDeliveryProfile(profile) {
-  return Boolean(profile?.full_name?.trim() && profile?.phone?.trim() && profile?.address?.trim());
-}
-
-function renderProfile(profile) {
-  customerProfile = profile ?? null;
-  const complete = hasCompleteDeliveryProfile(customerProfile);
-  profileCard.hidden = !complete;
-  profileMissing.hidden = complete;
-  submit.disabled = !complete || reservationExpired();
-  fullNameEl.textContent = customerProfile?.full_name?.trim() || "—";
-  phoneEl.textContent = customerProfile?.phone?.trim() || "—";
-  addressEl.textContent = customerProfile?.address?.trim() || "—";
-  if (!complete) setStatus("Add your delivery details in My Account before continuing.", "error");
-  else if (!pendingReservation) setStatus("");
-}
-
-function getSelectedProductIds() {
-  const raw = new URLSearchParams(window.location.search).get("items");
-  return new Set((raw ? raw.split(",") : []).map((id) => id.trim()).filter(Boolean));
-}
+let checkoutItems = [], deliverySettings = null, pendingOrderId = null, pendingReservation = null, currentSession = null, customerProfile = null, reservationTimer = null;
+function setStatus(message, type = "") { status.textContent = message; status.className = `checkout-status${type ? ` checkout-status--${type}` : ""}`; status.hidden = !message; }
+function escapeHtml(value) { return String(value).replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character])); }
+function hasCompleteDeliveryProfile(profile) { return Boolean(profile?.full_name?.trim() && profile?.phone?.trim() && profile?.address?.trim()); }
+function renderProfile(profile) { customerProfile = profile ?? null; const complete = hasCompleteDeliveryProfile(customerProfile); profileCard.hidden = !complete; profileMissing.hidden = complete; submit.disabled = !complete || reservationExpired(); fullNameEl.textContent = customerProfile?.full_name?.trim() || "—"; phoneEl.textContent = customerProfile?.phone?.trim() || "—"; addressEl.textContent = customerProfile?.address?.trim() || "—"; if (!complete) setStatus("Add your delivery details in My Account before continuing.", "error"); else if (!pendingReservation) setStatus(""); }
+function getSelectedProductIds() { const raw = new URLSearchParams(window.location.search).get("items"); return new Set((raw ? raw.split(",") : []).map((id) => id.trim()).filter(Boolean)); }
 
 async function init() {
   currentSession = await getCurrentSession();
-  if (!currentSession?.user) {
-    authNotice.hidden = false;
-    form.hidden = true;
-    authNotice.innerHTML = 'Please <a href="/login.html?redirect=checkout.html">log in</a> to continue to checkout.';
-    return;
-  }
-
+  if (!currentSession?.user) { authNotice.hidden = false; form.hidden = true; authNotice.innerHTML = 'Please <a href="/login.html?redirect=checkout.html">log in</a> to continue to checkout.'; return; }
   const [profile, pending] = await Promise.all([getCustomerProfile(), findActivePendingOrder()]);
-
-  if (pending) {
-    pendingOrderId = pending.order.id;
-    pendingOrderNumber = pending.order.order_number;
-    pendingReservation = pending.reservation;
-    checkoutItems = pending.items;
-    renderPendingOrder(pending.order);
-    renderProfile(profile);
-    startReservationCountdown();
-    form.hidden = false;
-    return;
-  }
+  if (pending) { pendingOrderId = pending.order.id; pendingReservation = pending.reservation; checkoutItems = pending.items; renderPendingOrder(pending.order); renderProfile(profile); startReservationCountdown(); form.hidden = false; return; }
 
   const cart = getCart();
-  if (!cart.length) {
-    setStatus("Your cart is empty. Add products before checking out.", "error");
-    form.hidden = true;
-    return;
-  }
-
+  if (!cart.length) { setStatus("Your cart is empty. Add products before checking out.", "error"); form.hidden = true; return; }
   const selectedIds = getSelectedProductIds();
   const sourceItems = selectedIds.size ? cart.filter((item) => selectedIds.has(String(item.productId))) : cart;
-  if (!sourceItems.length) {
-    setStatus("No valid cart items were selected. Return to your cart and choose what to buy.", "error");
-    form.hidden = true;
-    return;
-  }
+  if (!sourceItems.length) { setStatus("No valid cart items were selected. Return to your cart and choose what to buy.", "error"); form.hidden = true; return; }
 
-  const [products, deliveryResult] = await Promise.all([
-    getProductsByIds(sourceItems.map((item) => item.productId)),
-    supabase.from("delivery_settings").select("delivery_fee,is_delivery_enabled").eq("is_active", true).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
-  ]);
-
+  const [products, deliveryResult] = await Promise.all([getProductsByIds(sourceItems.map((item) => item.productId)), supabase.from("delivery_settings").select("delivery_fee,is_delivery_enabled").eq("is_active", true).order("updated_at", { ascending: false }).limit(1).maybeSingle()]);
   if (deliveryResult.error) throw deliveryResult.error;
   deliverySettings = deliveryResult.data;
   const productMap = new Map(products.map((product) => [String(product.id), product]));
   checkoutItems = sourceItems.map((item) => ({ ...item, product: productMap.get(item.productId) })).filter((item) => item.product);
-
-  if (!checkoutItems.length) {
-    setStatus("The selected products are no longer available. Please return to your cart.", "error");
-    form.hidden = true;
-    return;
-  }
-
-  renderSummary();
-  renderProfile(profile);
-  form.hidden = false;
+  if (!checkoutItems.length) { setStatus("The selected products are no longer available. Please return to your cart.", "error"); form.hidden = true; return; }
+  renderSummary(); renderProfile(profile); form.hidden = false;
 }
 
 async function findActivePendingOrder() {
   const now = new Date().toISOString();
   const { data: reservations, error: reservationError } = await supabase.from("reservations").select("id,order_id,expires_at").eq("status", "active").gt("expires_at", now).order("created_at", { ascending: false }).limit(1);
   if (reservationError) throw reservationError;
-  const reservation = reservations?.[0];
-  if (!reservation) return null;
-
+  const reservation = reservations?.[0]; if (!reservation) return null;
   const { data: order, error: orderError } = await supabase.from("orders").select("id,order_number,status,payment_status,subtotal,delivery_fee,discount_amount,total,promo_code,created_at").eq("id", reservation.order_id).eq("status", "pending_payment").eq("payment_status", "pending").maybeSingle();
-  if (orderError) throw orderError;
-  if (!order) return null;
-
+  if (orderError) throw orderError; if (!order) return null;
   const { data: items, error: itemError } = await supabase.from("order_items").select("product_id,product_name,unit_price,quantity,line_total").eq("order_id", order.id).order("created_at", { ascending: true });
-  if (itemError) throw itemError;
-  if (!items?.length) return null;
-
+  if (itemError) throw itemError; if (!items?.length) return null;
   return { order, reservation, items: items.map((item) => ({ productId: item.product_id, quantity: item.quantity, product: { id: item.product_id, name: item.product_name, price: item.unit_price } })) };
 }
 
-function renderPendingOrder(order) {
-  renderSummary({ subtotal: order.subtotal, delivery_fee: order.delivery_fee, delivery_enabled: Number(order.delivery_fee) > 0, discount: order.discount_amount, total: order.total });
-  promoInput.value = order.promo_code || "";
-  promoInput.disabled = true;
-  submit.textContent = "Continue to payment";
-  confirmNote.textContent = "Your order is reserved. Continue to Paystack to complete payment.";
-  reservationBox.hidden = false;
-  reservationOrder.textContent = order.order_number || `Order ${String(order.id).slice(0, 8)}`;
-  reservationMessage.textContent = "Your items are reserved while you complete payment.";
-}
-
-function reservationExpired() {
-  return Boolean(pendingReservation && Date.parse(pendingReservation.expires_at) <= Date.now());
-}
-
-function startReservationCountdown() {
-  if (reservationTimer) clearInterval(reservationTimer);
-  updateReservationCountdown();
-  reservationTimer = setInterval(updateReservationCountdown, 1000);
-}
-
-function updateReservationCountdown() {
-  if (!pendingReservation) return;
-  const remaining = Math.max(0, Date.parse(pendingReservation.expires_at) - Date.now());
-  if (remaining <= 0) {
-    clearInterval(reservationTimer);
-    reservationTimer = null;
-    reservationBox.classList.add("is-expired");
-    reservationCountdown.textContent = "Expired";
-    reservationMessage.textContent = "This reservation has expired. Return to your cart to start a new checkout.";
-    submit.disabled = true;
-    submit.textContent = "Reservation expired";
-    return;
-  }
-  const totalSeconds = Math.ceil(remaining / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  reservationCountdown.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}
-
+function renderPendingOrder(order) { renderSummary({ subtotal: order.subtotal, delivery_fee: order.delivery_fee, delivery_enabled: Number(order.delivery_fee) > 0, discount: order.discount_amount, total: order.total }); promoInput.value = order.promo_code || ""; promoInput.disabled = true; submit.textContent = "Continue to payment"; confirmNote.textContent = "Your order is reserved. Continue to Paystack to complete payment."; reservationBox.hidden = false; reservationOrder.textContent = order.order_number || `Order ${String(order.id).slice(0, 8)}`; reservationMessage.textContent = "Your items are reserved while you complete payment."; }
+function reservationExpired() { return Boolean(pendingReservation && Date.parse(pendingReservation.expires_at) <= Date.now()); }
+function startReservationCountdown() { if (reservationTimer) clearInterval(reservationTimer); updateReservationCountdown(); reservationTimer = setInterval(updateReservationCountdown, 1000); }
+function updateReservationCountdown() { if (!pendingReservation) return; const remaining = Math.max(0, Date.parse(pendingReservation.expires_at) - Date.now()); if (remaining <= 0) { clearInterval(reservationTimer); reservationTimer = null; reservationBox.classList.add("is-expired"); reservationCountdown.textContent = "Expired"; reservationMessage.textContent = "This reservation has expired. Return to your cart to start a new checkout."; submit.disabled = true; submit.textContent = "Reservation expired"; return; } const totalSeconds = Math.ceil(remaining / 1000), minutes = Math.floor(totalSeconds / 60), seconds = totalSeconds % 60; reservationCountdown.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`; }
 function isDeliveryEnabled() { return Boolean(deliverySettings?.is_delivery_enabled); }
 function calculateLocalDelivery() { return isDeliveryEnabled() ? Math.max(0, Number(deliverySettings?.delivery_fee ?? 0)) : 0; }
 function getLocalSubtotal() { return checkoutItems.reduce((total, item) => total + Number(item.product.price) * Math.max(1, Number.parseInt(item.quantity, 10) || 1), 0); }
-
-function renderSummary(totals = null) {
-  summary.innerHTML = "";
-  for (const item of checkoutItems) {
-    const quantity = Math.max(1, Number.parseInt(item.quantity, 10) || 1);
-    const lineTotal = Number(item.product.price) * quantity;
-    const row = document.createElement("div");
-    row.className = "checkout-item";
-    row.innerHTML = `<span>${escapeHtml(item.product.name)} × ${quantity}</span><strong>${naira.format(lineTotal)}</strong>`;
-    summary.append(row);
-  }
-
-  const subtotal = totals ? Number(totals.subtotal) : getLocalSubtotal();
-  const deliveryEnabled = totals ? Boolean(totals.delivery_enabled) : isDeliveryEnabled();
-  const delivery = totals ? Number(totals.delivery_fee) : calculateLocalDelivery();
-  const discount = totals ? Number(totals.discount) : 0;
-  const total = totals ? Number(totals.total) : subtotal + delivery - discount;
-  subtotalEl.textContent = naira.format(subtotal);
-  deliveryRow.hidden = !deliveryEnabled;
-  deliveryEl.textContent = delivery === 0 ? "Free" : naira.format(delivery);
-  discountRow.hidden = !discount;
-  discountEl.textContent = discount ? `−${naira.format(discount)}` : "—";
-  totalEl.textContent = naira.format(total);
-}
-
-async function initializePayment(orderId) {
-  const response = await fetch("/api/paystack/initialize", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${currentSession.access_token}` }, body: JSON.stringify({ order_id: orderId }) });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) { const error = new Error(data?.error || "PAYMENT_INITIALIZATION_FAILED"); error.code = data?.error; throw error; }
-  if (!data.authorization_url) throw new Error("PAYMENT_INITIALIZATION_FAILED");
-  window.location.href = data.authorization_url;
-}
+function renderSummary(totals = null) { summary.innerHTML = ""; for (const item of checkoutItems) { const quantity = Math.max(1, Number.parseInt(item.quantity, 10) || 1), lineTotal = Number(item.product.price) * quantity, row = document.createElement("div"); row.className = "checkout-item"; row.innerHTML = `<span>${escapeHtml(item.product.name)} × ${quantity}</span><strong>${naira.format(lineTotal)}</strong>`; summary.append(row); } const subtotal = totals ? Number(totals.subtotal) : getLocalSubtotal(), deliveryEnabled = totals ? Boolean(totals.delivery_enabled) : isDeliveryEnabled(), delivery = totals ? Number(totals.delivery_fee) : calculateLocalDelivery(), discount = totals ? Number(totals.discount) : 0, total = totals ? Number(totals.total) : subtotal + delivery - discount; subtotalEl.textContent = naira.format(subtotal); deliveryRow.hidden = !deliveryEnabled; deliveryEl.textContent = delivery === 0 ? "Free" : naira.format(delivery); discountRow.hidden = !discount; discountEl.textContent = discount ? `−${naira.format(discount)}` : "—"; totalEl.textContent = naira.format(total); }
+async function initializePayment(orderId) { const response = await fetch("/api/paystack/initialize", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${currentSession.access_token}` }, body: JSON.stringify({ order_id: orderId }) }); const data = await response.json().catch(() => ({})); if (!response.ok) { const error = new Error(data?.error || "PAYMENT_INITIALIZATION_FAILED"); error.code = data?.error; throw error; } if (!data.authorization_url) throw new Error("PAYMENT_INITIALIZATION_FAILED"); window.location.href = data.authorization_url; }
 
 form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  setStatus("");
+  event.preventDefault(); setStatus("");
   if (reservationExpired()) { setStatus("This payment reservation has expired. Return to your cart to start a new checkout.", "error"); return; }
   if (!hasCompleteDeliveryProfile(customerProfile)) { setStatus("Add your delivery details in My Account before continuing.", "error"); return; }
-
-  submit.disabled = true;
-  submit.textContent = pendingOrderId ? "Opening payment…" : "Creating order…";
+  submit.disabled = true; submit.textContent = pendingOrderId ? "Opening payment…" : "Creating order…";
   try {
     if (!pendingOrderId) {
       const cartItems = checkoutItems.map(({ productId, quantity }) => ({ productId, quantity }));
       const { data, error } = await supabase.rpc("create_pending_order", { cart_items: cartItems, delivery_name: customerProfile.full_name.trim(), delivery_phone: customerProfile.phone.trim(), delivery_address: customerProfile.address.trim(), requested_promo_code: promoInput.value.trim() || null });
       if (error) throw error;
-      pendingOrderId = data.order_id;
-      pendingOrderNumber = data.order_number;
-      pendingReservation = { id: data.reservation_id, order_id: data.order_id, expires_at: data.expires_at };
-      renderSummary(data);
-      reservationBox.hidden = false;
-      reservationBox.classList.remove("is-expired");
-      reservationOrder.textContent = data.order_number || `Order ${String(data.order_id).slice(0, 8)}`;
-      reservationMessage.textContent = "Your order has been placed and the selected items are reserved for 15 minutes.";
-      confirmNote.textContent = "Your order is reserved. Continue to Paystack to complete payment.";
-      submit.textContent = "Continue to payment";
-      startReservationCountdown();
-      promoInput.disabled = true;
-      submit.disabled = false;
-      setStatus(`Order ${data.order_number || "created"} is reserved. Continue to payment when ready.`, "success");
-      return;
+      pendingOrderId = data.order_id; pendingReservation = { id: data.reservation_id, order_id: data.order_id, expires_at: data.expires_at };
+      renderSummary(data); reservationBox.hidden = false; reservationBox.classList.remove("is-expired"); reservationOrder.textContent = data.order_number || `Order ${String(data.order_id).slice(0, 8)}`; reservationMessage.textContent = "Your order has been created and the selected items are reserved for 15 minutes."; confirmNote.textContent = "Your order is reserved. Continue to Paystack to complete payment."; submit.textContent = "Continue to payment"; startReservationCountdown(); promoInput.disabled = true; submit.disabled = false; setStatus(`Order ${data.order_number || "created"} is reserved. Continue to payment when ready.`, "success"); return;
     }
-
     await initializePayment(pendingOrderId);
   } catch (error) {
-    console.error(error);
-    if (error?.code === "ORDER_NOT_PAYABLE" || error?.code === "ORDER_RESERVATION_EXPIRED") pendingOrderId = null;
-    submit.disabled = false;
-    submit.textContent = pendingOrderId ? "Continue to payment" : "Confirm order & reserve items";
-    const message = error?.message ?? "";
+    console.error(error); if (error?.code === "ORDER_NOT_PAYABLE" || error?.code === "ORDER_RESERVATION_EXPIRED") pendingOrderId = null; submit.disabled = false; submit.textContent = pendingOrderId ? "Continue to payment" : "Confirm order & reserve items"; const message = error?.message ?? "";
     if (message.includes("INSUFFICIENT_STOCK")) setStatus("One or more products no longer have enough stock. Please return to your cart and adjust the quantities.", "error");
     else if (message.includes("PRODUCT_UNAVAILABLE")) setStatus("One or more products are no longer available. Please return to your cart.", "error");
     else if (message.includes("DELIVERY_DETAILS_REQUIRED")) setStatus("Add your delivery details in My Account before continuing.", "error");
@@ -272,5 +85,4 @@ form.addEventListener("submit", async (event) => {
     else setStatus("We could not prepare the order or payment. Please try again.", "error");
   }
 });
-
 init().catch((error) => { console.error(error); setStatus("We could not prepare checkout. Please try again.", "error"); });
