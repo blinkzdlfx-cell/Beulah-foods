@@ -21,9 +21,10 @@ jobs:
           ref: phase3/unit-integration-tests
           fetch-depth: 0
 
-      - name: Remove premature cart deletion
+      - name: Restore checkout and remove premature cart deletion
         shell: bash
         run: |
+          git checkout 82ccce9717c11ab8557da365dbb521d2055b7c57 -- storefront/js/pages/checkout.js
           python - <<'PY'
           from pathlib import Path
           path = Path("storefront/js/pages/checkout.js")
@@ -33,18 +34,18 @@ jobs:
               'import { getCart } from "../services/cartService.js";',
           )
           lines = [line for line in text.splitlines() if "removeCartItems(" not in line]
-          path.write_text("\\n".join(lines) + "\\n")
+          path.write_text("\n".join(lines) + "\n")
           PY
 
       - name: Commit checkout contract fix
         shell: bash
         run: |
-          if git diff --quiet -- storefront/js/pages/checkout.js; then
-            echo "No checkout change required."
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add storefront/js/pages/checkout.js
+          if git diff --cached --quiet; then
+            echo "No checkout change required."
+            exit 0
+          fi
           git commit -m "fix: keep cart until successful payment"
           git push origin HEAD:phase3/unit-integration-tests
