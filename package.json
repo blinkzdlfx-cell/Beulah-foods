@@ -1,0 +1,17 @@
+{
+  "name": "beulah-foods",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Testing and static validation tooling for Beulah Foods.",
+  "scripts": {
+    "lint": "eslint storefront admin worker.js",
+    "format:check": "prettier --check \"storefront/**/*.js\" \"admin/**/*.js\" \"worker.js\"",
+    "format": "prettier --write \"storefront/**/*.js\" \"admin/**/*.js\" \"worker.js\"",
+    "static:check": "npm run lint"
+  },
+  "devDependencies": {
+    "eslint": "9.35.0",
+    "globals": "16.4.0",
+    "prettier": "3.6.2"
+  }
+}
