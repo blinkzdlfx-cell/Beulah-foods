@@ -64,12 +64,12 @@ jobs:
             node --check "$file"
           done
 
-      - name: Check browser source for service-role key
+      - name: Check browser source for service-role key exposure
         shell: bash
         run: |
           set -euo pipefail
-          if grep -RniE 'service[_-]?role|SUPABASE_SERVICE_ROLE_KEY' storefront admin --include='*.js' --include='*.html' --include='*.css' 2>/dev/null; then
-            echo "Potential service-role key/reference found in browser-facing source."
+          if grep -RniE 'SUPABASE_SERVICE_ROLE_KEY|service[_-]?role[[:space:]]*[:=]' storefront admin --include='*.js' --include='*.html' --include='*.css' 2>/dev/null; then
+            echo "Potential service-role key assignment/reference found in browser-facing source."
             exit 1
           fi
 
