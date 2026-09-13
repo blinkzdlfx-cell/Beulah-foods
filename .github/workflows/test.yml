@@ -1,0 +1,86 @@
+name: Beulah Foods Verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    name: Phase 1 baseline
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify required documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          required_files=(
+            README.md
+            PROJECT.md
+            ARCHITECTURE.md
+            DEVELOPMENT.md
+            DESIGN.md
+            FEATURES.md
+            RULES.md
+            AGENTS.md
+            PHASE_PROGRESS.md
+            TESTING.md
+          )
+
+          for file in "${required_files[@]}"; do
+            test -f "$file" || { echo "Missing required file: $file"; exit 1; }
+          done
+
+      - name: Verify application structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d storefront
+          test -d admin
+          test -d supabase
+          test -f worker.js
+          test -d supabase/migrations
+
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t js_files < <(find storefront admin -type f -name '*.js' -print | sort)
+          if [ "${#js_files[@]}" -eq 0 ]; then
+            echo "No storefront/admin JavaScript files found."
+            exit 1
+          fi
+
+          for file in "${js_files[@]}" worker.js; do
+            echo "Checking $file"
+            node --check "$file"
+          done
+
+      - name: Check browser source for service-role key
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RniE 'service[_-]?role|SUPABASE_SERVICE_ROLE_KEY' storefront admin --include='*.js' --include='*.html' --include='*.css' 2>/dev/null; then
+            echo "Potential service-role key/reference found in browser-facing source."
+            exit 1
+          fi
+
+      - name: Check locked stack for obvious forbidden frameworks
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RniE '(^|[^[:alnum:]_-])(react|next\.js|nextjs|vue|angular|tailwind|bootstrap|vite|webpack)([^[:alnum:]_-]|$)' storefront admin --exclude-dir=node_modules 2>/dev/null; then
+            echo "A forbidden framework/build-tool reference was found in application source. Review it against ARCHITECTURE.md before proceeding."
+            exit 1
+          fi
+
+      - name: Phase 1 summary
+        run: echo "Phase 1 baseline verification completed successfully."
