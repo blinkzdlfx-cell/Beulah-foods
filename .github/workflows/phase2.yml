@@ -2,7 +2,9 @@ name: Beulah Foods Phase 2 Verification
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - phase2/prettier-fix
   pull_request:
     branches: [main]
 
