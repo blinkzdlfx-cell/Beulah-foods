@@ -1,0 +1,43 @@
+name: Beulah Foods Phase 2 Formatting Fix
+
+on:
+  push:
+    branches: [phase2/prettier-fix]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    name: Apply Prettier formatting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install development tooling
+        run: npm install --ignore-scripts
+
+      - name: Apply Prettier formatting
+        run: npm run format
+
+      - name: Commit formatting-only changes
+        run: |
+          if git diff --quiet; then
+            echo "No formatting changes are required."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add storefront admin worker.js
+          git commit -m "style: apply prettier formatting"
+          git push origin HEAD:phase2/prettier-fix
