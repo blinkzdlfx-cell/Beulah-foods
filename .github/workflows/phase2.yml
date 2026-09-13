@@ -1,0 +1,40 @@
+name: Beulah Foods Phase 2 Verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  phase2:
+    name: Phase 2 project checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install development tooling
+        run: npm install --ignore-scripts
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run formatting check
+        run: npm run format:check
+
+      - name: Run static validation
+        run: npm run static:check
+
+      - name: Phase 2 summary
+        run: echo "Phase 2 project checks completed successfully."
