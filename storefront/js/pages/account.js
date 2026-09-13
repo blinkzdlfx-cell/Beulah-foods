@@ -159,5 +159,8 @@ function clearAlert() {
 }
 
 loadAccount().catch((error) => {
-  showAlert(error?.message || "Unable to load your account. Please refresh and try again.", "error");
+  showAlert(
+    error?.message || "Unable to load your account. Please refresh and try again.",
+    "error",
+  );
 });

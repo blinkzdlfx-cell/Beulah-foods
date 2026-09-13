@@ -24,7 +24,9 @@ form.addEventListener("submit", async (event) => {
   try {
     await signInCustomer({ email, password });
     showToast("Logged in successfully.");
-    window.setTimeout(() => { window.location.href = redirectTarget; }, 250);
+    window.setTimeout(() => {
+      window.location.href = redirectTarget;
+    }, 250);
   } catch (error) {
     setLoading(false);
     const message = describeLoginError(error);
@@ -42,10 +44,21 @@ function sanitizeRedirect(value) {
 
 function describeLoginError(error) {
   const message = error?.message?.toLowerCase() ?? "";
-  if (message.includes("email not confirmed")) return "Please confirm your email before logging in — check your inbox for the confirmation link.";
-  if (message.includes("invalid login credentials")) return "That email or password isn't right. Please try again.";
+  if (message.includes("email not confirmed"))
+    return "Please confirm your email before logging in — check your inbox for the confirmation link.";
+  if (message.includes("invalid login credentials"))
+    return "That email or password isn't right. Please try again.";
   return "Something went wrong logging in. Please try again.";
 }
-function showAlert(kind, message) { alertBox.textContent = message; alertBox.className = `alert alert-${kind}`; alertBox.hidden = false; }
-function hideAlert() { alertBox.hidden = true; }
-function setLoading(isLoading) { submitBtn.disabled = isLoading; submitBtn.textContent = isLoading ? "Logging in…" : "Log in"; }
+function showAlert(kind, message) {
+  alertBox.textContent = message;
+  alertBox.className = `alert alert-${kind}`;
+  alertBox.hidden = false;
+}
+function hideAlert() {
+  alertBox.hidden = true;
+}
+function setLoading(isLoading) {
+  submitBtn.disabled = isLoading;
+  submitBtn.textContent = isLoading ? "Logging in…" : "Log in";
+}

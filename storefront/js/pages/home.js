@@ -1,6 +1,10 @@
 import { initHeader } from "../components/navbar.js";
 import { getCurrentSession, onAuthStateChange } from "../services/authService.js";
-import { getFeaturedProducts, getHomepageCategories, getProducts } from "../services/catalogService.js";
+import {
+  getFeaturedProducts,
+  getHomepageCategories,
+  getProducts,
+} from "../services/catalogService.js";
 import { addToCart, getCart } from "../services/cartService.js";
 import { showToast } from "../components/toast.js";
 
@@ -17,16 +21,32 @@ const ctaPrimaryAction = document.getElementById("cta-primary-action");
 const ctaSecondaryAction = document.getElementById("cta-secondary-action");
 let welcomeShown = false;
 
-const naira = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 });
+const naira = new Intl.NumberFormat("en-NG", {
+  style: "currency",
+  currency: "NGN",
+  maximumFractionDigits: 2,
+});
 
-function escapeHtml(value) { return String(value ?? "").replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character])); }
-function escapeAttribute(value) { return escapeHtml(value).replace(/'/g, "&#039;"); }
-function icon(name, className = "icon") { return `<svg class="${className}" aria-hidden="true"><use href="assets/icons.svg#${name}"></use></svg>`; }
+function escapeHtml(value) {
+  return String(value ?? "").replace(
+    /[&<>\"]/g,
+    (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[character],
+  );
+}
+function escapeAttribute(value) {
+  return escapeHtml(value).replace(/'/g, "&#039;");
+}
+function icon(name, className = "icon") {
+  return `<svg class="${className}" aria-hidden="true"><use href="assets/icons.svg#${name}"></use></svg>`;
+}
 
 function renderFeaturedProducts(products) {
   if (!featuredSection || !featuredGrid) return;
   featuredGrid.innerHTML = "";
-  if (!products.length) { featuredSection.hidden = true; return; }
+  if (!products.length) {
+    featuredSection.hidden = true;
+    return;
+  }
   featuredSection.hidden = false;
 
   for (const product of products) {
@@ -41,10 +61,19 @@ function renderFeaturedProducts(products) {
       try {
         const existing = getCart().find((item) => String(item.productId) === String(product.id));
         const currentQuantity = Number(existing?.quantity) || 0;
-        if (currentQuantity >= stock) { showToast(`Only ${stock} ${product.name} ${stock === 1 ? "is" : "are"} available.`, "error"); return; }
+        if (currentQuantity >= stock) {
+          showToast(
+            `Only ${stock} ${product.name} ${stock === 1 ? "is" : "are"} available.`,
+            "error",
+          );
+          return;
+        }
         addToCart(product.id, 1);
         showToast(`${product.name} added to your cart.`, "success");
-      } catch (error) { console.error(error); showToast("We could not add this product to your cart.", "error"); }
+      } catch (error) {
+        console.error(error);
+        showToast("We could not add this product to your cart.", "error");
+      }
     });
     featuredGrid.append(card);
   }
@@ -61,7 +90,26 @@ function renderFeaturedStructuredData(products) {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: "Featured Beulah Foods products",
-    itemListElement: products.map((product, index) => ({ "@type": "ListItem", position: index + 1, url: `https://beulah-foods.blinkzdlfx.workers.dev/storefront/product.html?slug=${encodeURIComponent(product.slug)}`, item: { "@type": "Product", name: product.name, description: product.description || undefined, image: product.image_src || undefined, offers: { "@type": "Offer", priceCurrency: "NGN", price: Number(product.price), availability: Number(product.stock_quantity) > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock" } } })),
+    itemListElement: products.map((product, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `https://beulah-foods.blinkzdlfx.workers.dev/storefront/product.html?slug=${encodeURIComponent(product.slug)}`,
+      item: {
+        "@type": "Product",
+        name: product.name,
+        description: product.description || undefined,
+        image: product.image_src || undefined,
+        offers: {
+          "@type": "Offer",
+          priceCurrency: "NGN",
+          price: Number(product.price),
+          availability:
+            Number(product.stock_quantity) > 0
+              ? "https://schema.org/InStock"
+              : "https://schema.org/OutOfStock",
+        },
+      },
+    })),
   });
   document.head.append(schema);
 }
@@ -69,7 +117,10 @@ function renderFeaturedStructuredData(products) {
 function renderHomepageCategories(categories) {
   if (!categorySection || !categoryGrid) return;
   categoryGrid.innerHTML = "";
-  if (!categories.length) { categorySection.hidden = true; return; }
+  if (!categories.length) {
+    categorySection.hidden = true;
+    return;
+  }
   categorySection.hidden = false;
   const iconNames = ["leaf", "heart", "box", "shield", "leaf", "heart"];
   categories.forEach((category, index) => {
@@ -83,7 +134,11 @@ function renderHomepageCategories(categories) {
 
 async function loadHomepageCatalogue() {
   try {
-    const [featured, categories, allProducts] = await Promise.all([getFeaturedProducts({ limit: 4 }), getHomepageCategories({ limit: 6 }), getProducts({ page: 1, pageSize: 1 })]);
+    const [featured, categories, allProducts] = await Promise.all([
+      getFeaturedProducts({ limit: 4 }),
+      getHomepageCategories({ limit: 6 }),
+      getProducts({ page: 1, pageSize: 1 }),
+    ]);
     renderFeaturedProducts(featured);
     renderHomepageCategories(categories);
     if (homepageProductCount) homepageProductCount.textContent = String(allProducts.count ?? 0);
@@ -96,16 +151,46 @@ async function loadHomepageCatalogue() {
 
 function updateAuthenticatedContent(session) {
   const signedIn = Boolean(session?.user);
-  const isNewAccount = signedIn && !welcomeShown && window.localStorage.getItem("beulah:new-account-welcome") === "1";
-  if (isNewAccount) { welcomeShown = true; window.localStorage.removeItem("beulah:new-account-welcome"); }
-  if (ctaTitle) ctaTitle.textContent = isNewAccount ? "Welcome to Beulah Foods." : signedIn ? "Good food starts with good choices." : "Bring better food choices home.";
-  if (ctaCopy) ctaCopy.textContent = isNewAccount ? "Your account is ready. Add your delivery details whenever you’re ready, then explore the Beulah Foods catalogue." : signedIn ? "Discover wholesome food products, keep your details ready for checkout and shop from the live Beulah Foods catalogue." : "Create an account, discover our products and make everyday food shopping simpler.";
-  if (ctaPrimaryAction) { ctaPrimaryAction.href = signedIn ? "shop.html" : "signup.html"; ctaPrimaryAction.textContent = isNewAccount ? "Start shopping" : signedIn ? "Shop now" : "Create an account"; }
-  if (ctaSecondaryAction) { ctaSecondaryAction.href = signedIn ? "account.html" : "login.html"; ctaSecondaryAction.textContent = isNewAccount ? "View my details" : signedIn ? "My account" : "Log in"; }
+  const isNewAccount =
+    signedIn && !welcomeShown && window.localStorage.getItem("beulah:new-account-welcome") === "1";
+  if (isNewAccount) {
+    welcomeShown = true;
+    window.localStorage.removeItem("beulah:new-account-welcome");
+  }
+  if (ctaTitle)
+    ctaTitle.textContent = isNewAccount
+      ? "Welcome to Beulah Foods."
+      : signedIn
+        ? "Good food starts with good choices."
+        : "Bring better food choices home.";
+  if (ctaCopy)
+    ctaCopy.textContent = isNewAccount
+      ? "Your account is ready. Add your delivery details whenever you’re ready, then explore the Beulah Foods catalogue."
+      : signedIn
+        ? "Discover wholesome food products, keep your details ready for checkout and shop from the live Beulah Foods catalogue."
+        : "Create an account, discover our products and make everyday food shopping simpler.";
+  if (ctaPrimaryAction) {
+    ctaPrimaryAction.href = signedIn ? "shop.html" : "signup.html";
+    ctaPrimaryAction.textContent = isNewAccount
+      ? "Start shopping"
+      : signedIn
+        ? "Shop now"
+        : "Create an account";
+  }
+  if (ctaSecondaryAction) {
+    ctaSecondaryAction.href = signedIn ? "account.html" : "login.html";
+    ctaSecondaryAction.textContent = isNewAccount
+      ? "View my details"
+      : signedIn
+        ? "My account"
+        : "Log in";
+  }
 }
 
 loadHomepageCatalogue();
-getCurrentSession().then(updateAuthenticatedContent).catch(() => updateAuthenticatedContent(null));
+getCurrentSession()
+  .then(updateAuthenticatedContent)
+  .catch(() => updateAuthenticatedContent(null));
 onAuthStateChange((_event, session) => updateAuthenticatedContent(session));
 const footerYear = document.getElementById("footer-year");
 if (footerYear) footerYear.textContent = String(new Date().getFullYear());

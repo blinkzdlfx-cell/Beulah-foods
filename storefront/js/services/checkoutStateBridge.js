@@ -31,10 +31,13 @@ async function syncCheckoutOrderHint() {
   // checkout.js still verifies ownership and payment state against Supabase;
   // this URL value is only a locator, never an authorization boundary.
   if (explicitOrderId) {
-    localStorage.setItem(CHECKOUT_ORDER_KEY, JSON.stringify({
-      userId: session.user.id,
-      orderId: explicitOrderId,
-    }));
+    localStorage.setItem(
+      CHECKOUT_ORDER_KEY,
+      JSON.stringify({
+        userId: session.user.id,
+        orderId: explicitOrderId,
+      }),
+    );
     return;
   }
 
@@ -88,10 +91,13 @@ async function syncCheckoutOrderHint() {
     return;
   }
 
-  localStorage.setItem(CHECKOUT_ORDER_KEY, JSON.stringify({
-    userId: session.user.id,
-    orderId: String(candidate.id),
-  }));
+  localStorage.setItem(
+    CHECKOUT_ORDER_KEY,
+    JSON.stringify({
+      userId: session.user.id,
+      orderId: String(candidate.id),
+    }),
+  );
 }
 
 // Top-level await makes checkout.js start only after the database-backed

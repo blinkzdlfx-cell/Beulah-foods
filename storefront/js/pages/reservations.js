@@ -15,12 +15,16 @@ const naira = new Intl.NumberFormat("en-NG", {
 });
 
 function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>\"]/g, (c) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-  }[c]));
+  return String(value ?? "").replace(
+    /[&<>\"]/g,
+    (c) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+      })[c],
+  );
 }
 
 function setAlert(message, type = "error") {
@@ -30,16 +34,19 @@ function setAlert(message, type = "error") {
 }
 
 function isOpen(reservation, order) {
-  return reservation?.status === "active"
-    && Date.parse(reservation.expires_at) > Date.now()
-    && order?.status === "pending_payment"
-    && order?.payment_status === "pending";
+  return (
+    reservation?.status === "active" &&
+    Date.parse(reservation.expires_at) > Date.now() &&
+    order?.status === "pending_payment" &&
+    order?.payment_status === "pending"
+  );
 }
 
 function statusLabel(reservation, order) {
   if (isOpen(reservation, order)) return "Open";
   if (reservation?.status === "expired") return "Expired";
-  if (reservation?.status === "confirmed" || order?.payment_status === "successful") return "Completed";
+  if (reservation?.status === "confirmed" || order?.payment_status === "successful")
+    return "Completed";
   return "Cancelled";
 }
 
@@ -51,17 +58,22 @@ function statusClass(status) {
 
 function formatDate(value) {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("en-NG", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  return Number.isNaN(date.getTime())
+    ? ""
+    : date.toLocaleString("en-NG", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
 }
 
 function renderReservation(entry) {
   const { order, reservation, items } = entry;
   const status = statusLabel(reservation, order);
   const actionHref = `checkout.html?order=${encodeURIComponent(order.id)}`;
-  const itemText = items.length === 1 ? items[0].product_name : `${items[0]?.product_name || "Reserved items"} + ${items.length - 1} more`;
+  const itemText =
+    items.length === 1
+      ? items[0].product_name
+      : `${items[0]?.product_name || "Reserved items"} + ${items.length - 1} more`;
 
   const card = document.createElement("article");
   card.className = "card reservation-card";
@@ -138,10 +150,19 @@ async function loadReservations() {
   }
 
   const orderIds = orders.map((order) => order.id);
-  const [{ data: reservations, error: reservationError }, { data: items, error: itemError }] = await Promise.all([
-    supabase.from("reservations").select("id,order_id,status,expires_at,created_at,updated_at").in("order_id", orderIds).order("created_at", { ascending: false }),
-    supabase.from("order_items").select("order_id,product_name,quantity,line_total,created_at").in("order_id", orderIds).order("created_at", { ascending: true }),
-  ]);
+  const [{ data: reservations, error: reservationError }, { data: items, error: itemError }] =
+    await Promise.all([
+      supabase
+        .from("reservations")
+        .select("id,order_id,status,expires_at,created_at,updated_at")
+        .in("order_id", orderIds)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("order_items")
+        .select("order_id,product_name,quantity,line_total,created_at")
+        .in("order_id", orderIds)
+        .order("created_at", { ascending: true }),
+    ]);
   if (reservationError) throw reservationError;
   if (itemError) throw itemError;
 

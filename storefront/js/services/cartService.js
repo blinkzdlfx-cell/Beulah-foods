@@ -101,7 +101,9 @@ export function addToCart(productId, quantity = 1) {
 export function updateCartQuantity(productId, quantity) {
   const nextQuantity = Number.parseInt(quantity, 10) || 0;
   const items = getCart()
-    .map((item) => item.productId === String(productId) ? { ...item, quantity: nextQuantity } : item)
+    .map((item) =>
+      item.productId === String(productId) ? { ...item, quantity: nextQuantity } : item,
+    )
     .filter((item) => item.quantity > 0);
   const next = saveCart(items);
   void persistCartToDatabase(next, "set");

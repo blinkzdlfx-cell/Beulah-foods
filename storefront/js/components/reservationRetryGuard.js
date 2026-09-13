@@ -24,53 +24,59 @@ if (retryButton) {
     subtree: true,
   });
 
-  retryButton.addEventListener("click", async (event) => {
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  retryButton.addEventListener(
+    "click",
+    async (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
 
-    if (countdown?.textContent?.trim() !== "Expired") {
-      retryButton.hidden = true;
-      setError("This reservation is still active. Please wait for the countdown to finish.");
-      return;
-    }
-
-    retryButton.disabled = true;
-    retryButton.textContent = "Preparing…";
-
-    const now = new Date().toISOString();
-    const { data: reservations, error: lookupError } = await supabase
-      .from("reservations")
-      .select("order_id")
-      .eq("status", "active")
-      .gt("expires_at", now)
-      .order("created_at", { ascending: false })
-      .limit(1);
-
-    if (lookupError || !reservations?.length) {
-      retryButton.disabled = false;
-      retryButton.textContent = "Retry checkout";
-      setError("This reservation is no longer available. Please return to your cart and start checkout again.");
-      return;
-    }
-
-    const { error } = await supabase.rpc("retry_expired_pending_order", {
-      target_order_id: reservations[0].order_id,
-    });
-
-    if (error) {
-      retryButton.disabled = false;
-      retryButton.textContent = "Retry checkout";
-      if (error.message?.includes("RESERVATION_STILL_ACTIVE")) {
+      if (countdown?.textContent?.trim() !== "Expired") {
         retryButton.hidden = true;
         setError("This reservation is still active. Please wait for the countdown to finish.");
-      } else {
-        setError(error.message || "Could not prepare checkout. Please try again.");
+        return;
       }
-      return;
-    }
 
-    window.location.href = "/checkout.html";
-  }, true);
+      retryButton.disabled = true;
+      retryButton.textContent = "Preparing…";
+
+      const now = new Date().toISOString();
+      const { data: reservations, error: lookupError } = await supabase
+        .from("reservations")
+        .select("order_id")
+        .eq("status", "active")
+        .gt("expires_at", now)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (lookupError || !reservations?.length) {
+        retryButton.disabled = false;
+        retryButton.textContent = "Retry checkout";
+        setError(
+          "This reservation is no longer available. Please return to your cart and start checkout again.",
+        );
+        return;
+      }
+
+      const { error } = await supabase.rpc("retry_expired_pending_order", {
+        target_order_id: reservations[0].order_id,
+      });
+
+      if (error) {
+        retryButton.disabled = false;
+        retryButton.textContent = "Retry checkout";
+        if (error.message?.includes("RESERVATION_STILL_ACTIVE")) {
+          retryButton.hidden = true;
+          setError("This reservation is still active. Please wait for the countdown to finish.");
+        } else {
+          setError(error.message || "Could not prepare checkout. Please try again.");
+        }
+        return;
+      }
+
+      window.location.href = "/checkout.html";
+    },
+    true,
+  );
 
   syncVisibility();
 }

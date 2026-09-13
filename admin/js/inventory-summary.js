@@ -47,7 +47,9 @@ async function fetchAvailableProducts(card) {
     if (error) throw error;
 
     const available = (data || []).reduce(
-      (total, item) => total + Math.max(0, (Number(item.stock_quantity) || 0) - (Number(item.reserved_quantity) || 0)),
+      (total, item) =>
+        total +
+        Math.max(0, (Number(item.stock_quantity) || 0) - (Number(item.reserved_quantity) || 0)),
       0,
     );
     writeCache(available);

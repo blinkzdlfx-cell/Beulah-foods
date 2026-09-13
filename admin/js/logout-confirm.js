@@ -11,7 +11,10 @@ function formatNaira(value) {
 }
 
 function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character]));
+  return String(value ?? "").replace(
+    /[&<>\"]/g,
+    (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[character],
+  );
 }
 
 function showAdminAlert(message, error = false) {
@@ -65,7 +68,8 @@ function openConfirm({ title, message, confirmLabel = "Delete", onConfirm }) {
     } catch (error) {
       confirmButton.disabled = false;
       confirmButton.textContent = confirmLabel;
-      modal.querySelector("#admin-confirm-copy").textContent = error?.message || "The action could not be completed.";
+      modal.querySelector("#admin-confirm-copy").textContent =
+        error?.message || "The action could not be completed.";
     }
   };
   const cleanup = () => {
@@ -80,19 +84,23 @@ function openConfirm({ title, message, confirmLabel = "Delete", onConfirm }) {
 }
 
 if (button) {
-  button.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    openConfirm({
-      title: "Log out?",
-      message: "Are you sure you want to log out of Beulah Foods Admin?",
-      confirmLabel: "Log out",
-      onConfirm: async () => {
-        await signOutAdmin();
-        window.location.reload();
-      },
-    });
-  }, true);
+  button.addEventListener(
+    "click",
+    (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      openConfirm({
+        title: "Log out?",
+        message: "Are you sure you want to log out of Beulah Foods Admin?",
+        confirmLabel: "Log out",
+        onConfirm: async () => {
+          await signOutAdmin();
+          window.location.reload();
+        },
+      });
+    },
+    true,
+  );
 }
 
 async function refreshDeliveryTable() {
@@ -103,14 +111,22 @@ async function refreshDeliveryTable() {
     .order("updated_at", { ascending: false });
   if (error) throw error;
 
-  deliveryRows.innerHTML = (data || []).map((item) => {
-    const deliveryLabel = item.is_delivery_enabled ? `On · ${formatNaira(item.delivery_fee)}` : "Off";
-    return `<tr><td>${deliveryLabel}</td><td>—</td><td>${item.is_active ? '<span class="badge">Active</span>' : 'Inactive'}</td><td><button class="btn btn-secondary" data-delivery-edit="${item.id}">Edit</button> <button class="btn btn-secondary" data-delivery-toggle="${item.id}">${item.is_active ? "Deactivate" : "Activate"}</button> <button class="btn btn-secondary" data-delivery-delete="${item.id}">Delete</button></td></tr>`;
-  }).join("") || '<tr><td colspan="4" class="muted">No delivery settings. Checkout will work without delivery charges.</td></tr>';
+  deliveryRows.innerHTML =
+    (data || [])
+      .map((item) => {
+        const deliveryLabel = item.is_delivery_enabled
+          ? `On · ${formatNaira(item.delivery_fee)}`
+          : "Off";
+        return `<tr><td>${deliveryLabel}</td><td>—</td><td>${item.is_active ? '<span class="badge">Active</span>' : "Inactive"}</td><td><button class="btn btn-secondary" data-delivery-edit="${item.id}">Edit</button> <button class="btn btn-secondary" data-delivery-toggle="${item.id}">${item.is_active ? "Deactivate" : "Activate"}</button> <button class="btn btn-secondary" data-delivery-delete="${item.id}">Delete</button></td></tr>`;
+      })
+      .join("") ||
+    '<tr><td colspan="4" class="muted">No delivery settings. Checkout will work without delivery charges.</td></tr>';
 }
 
 window.addEventListener("beulah:delivery-saved", () => {
-  refreshDeliveryTable().catch((error) => showAdminAlert(error?.message || "Could not refresh delivery settings.", true));
+  refreshDeliveryTable().catch((error) =>
+    showAdminAlert(error?.message || "Could not refresh delivery settings.", true),
+  );
 });
 
 async function handleDeliveryControl(button, action) {
@@ -130,7 +146,9 @@ async function handleDeliveryControl(button, action) {
     document.getElementById("delivery-active").checked = Boolean(data.is_active);
     document.getElementById("free-delivery-enabled").checked = false;
     document.getElementById("delivery-threshold").value = "";
-    document.getElementById("delivery-form").scrollIntoView({ behavior: "smooth", block: "center" });
+    document
+      .getElementById("delivery-form")
+      .scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
 
@@ -148,7 +166,9 @@ async function handleDeliveryControl(button, action) {
     .eq("id", data.id);
   if (updateError) throw updateError;
   await refreshDeliveryTable();
-  showAdminAlert(data.is_active ? "Delivery settings deactivated." : "Delivery settings activated.");
+  showAdminAlert(
+    data.is_active ? "Delivery settings deactivated." : "Delivery settings activated.",
+  );
 }
 
 async function handleDelete(event) {
@@ -191,17 +211,21 @@ async function handleDelete(event) {
   });
 }
 
-document.addEventListener("click", async (event) => {
-  const editButton = event.target.closest("[data-delivery-edit]");
-  const toggleButton = event.target.closest("[data-delivery-toggle]");
-  if (!editButton && !toggleButton) return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  try {
-    await handleDeliveryControl(editButton || toggleButton, editButton ? "edit" : "toggle");
-  } catch (error) {
-    showAdminAlert(error?.message || "Could not update delivery settings.", true);
-  }
-}, true);
+document.addEventListener(
+  "click",
+  async (event) => {
+    const editButton = event.target.closest("[data-delivery-edit]");
+    const toggleButton = event.target.closest("[data-delivery-toggle]");
+    if (!editButton && !toggleButton) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    try {
+      await handleDeliveryControl(editButton || toggleButton, editButton ? "edit" : "toggle");
+    } catch (error) {
+      showAdminAlert(error?.message || "Could not update delivery settings.", true);
+    }
+  },
+  true,
+);
 
 document.addEventListener("click", handleDelete, true);
