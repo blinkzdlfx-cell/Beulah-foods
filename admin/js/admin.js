@@ -115,15 +115,13 @@ categoryForm.addEventListener("submit", async (event) => {
   clearAlert(appAlert);
   const values = Object.fromEntries(new FormData(categoryForm));
   try {
-    const { error } = await supabase
-      .from("categories")
-      .insert({
-        name: values.name.trim(),
-        slug: slugify(values.name),
-        description: values.description.trim(),
-        sort_order: Number(values.sort_order) || 0,
-        is_active: true,
-      });
+    const { error } = await supabase.from("categories").insert({
+      name: values.name.trim(),
+      slug: slugify(values.name),
+      description: values.description.trim(),
+      sort_order: Number(values.sort_order) || 0,
+      is_active: true,
+    });
     if (error) throw error;
     categoryForm.reset();
     await loadCategories();
