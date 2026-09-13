@@ -14,20 +14,47 @@ jobs:
   phase2:
     name: Phase 2 project checks
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - name: Install development tooling
         run: npm install --ignore-scripts
+
       - name: Run lint
         run: npm run lint
+
       - name: Run formatting check
+        id: format_check
+        continue-on-error: true
         run: npm run format:check
+
+      - name: Capture formatting differences
+        if: steps.format_check.outcome == 'failure'
+        run: |
+          npx prettier --write "storefront/**/*.js" "admin/**/*.js" "worker.js"
+          git diff --name-only > prettier-differences.txt
+          cat prettier-differences.txt
+
+      - name: Upload formatting diagnostics
+        if: steps.format_check.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: prettier-differences
+          path: prettier-differences.txt
+
+      - name: Fail formatting gate
+        if: steps.format_check.outcome == 'failure'
+        run: exit 1
+
       - name: Run static validation
         run: npm run static:check
+
       - name: Phase 2 summary
         run: echo "Phase 2 project checks completed successfully."
