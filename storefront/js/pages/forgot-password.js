@@ -18,7 +18,9 @@ form.addEventListener("submit", async (event) => {
   setLoading(true);
   try {
     await requestPasswordReset(email, RESET_PASSWORD_URL);
-    showFinishedState(`If an account exists for ${email}, we've sent a link to reset your password. Check your inbox.`);
+    showFinishedState(
+      `If an account exists for ${email}, we've sent a link to reset your password. Check your inbox.`,
+    );
   } catch (error) {
     setLoading(false);
     showAlert("error", describeResetRequestError(error));
@@ -27,11 +29,31 @@ form.addEventListener("submit", async (event) => {
 
 function describeResetRequestError(error) {
   const message = error?.message?.toLowerCase() ?? "";
-  if (message.includes("rate limit") || message.includes("too many")) return "Too many requests. Please wait a moment and try again.";
+  if (message.includes("rate limit") || message.includes("too many"))
+    return "Too many requests. Please wait a moment and try again.";
   return "Something went wrong sending the reset link. Please try again.";
 }
-function showAlert(kind, message) { alertBox.textContent = message; alertBox.className = `alert alert-${kind}`; alertBox.hidden = false; }
-function hideAlert() { alertBox.hidden = true; }
-function setLoading(isLoading) { submitBtn.disabled = isLoading; submitBtn.textContent = isLoading ? "Sending…" : "Send reset link"; }
-function showFinishedState(message) { form.replaceWith(buildFinishedCard(message)); }
-function buildFinishedCard(message) { const wrapper = document.createElement("div"); const alert = document.createElement("div"); alert.className = "alert alert-success"; alert.setAttribute("role", "status"); alert.textContent = message; wrapper.append(alert); return wrapper; }
+function showAlert(kind, message) {
+  alertBox.textContent = message;
+  alertBox.className = `alert alert-${kind}`;
+  alertBox.hidden = false;
+}
+function hideAlert() {
+  alertBox.hidden = true;
+}
+function setLoading(isLoading) {
+  submitBtn.disabled = isLoading;
+  submitBtn.textContent = isLoading ? "Sending…" : "Send reset link";
+}
+function showFinishedState(message) {
+  form.replaceWith(buildFinishedCard(message));
+}
+function buildFinishedCard(message) {
+  const wrapper = document.createElement("div");
+  const alert = document.createElement("div");
+  alert.className = "alert alert-success";
+  alert.setAttribute("role", "status");
+  alert.textContent = message;
+  wrapper.append(alert);
+  return wrapper;
+}

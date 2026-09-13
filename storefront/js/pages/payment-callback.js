@@ -18,13 +18,20 @@ function clearRememberedCheckoutOrder() {
 }
 
 async function removePaidItems(orderId) {
-  const { data: items, error } = await supabase.from("order_items").select("product_id").eq("order_id", orderId);
+  const { data: items, error } = await supabase
+    .from("order_items")
+    .select("product_id")
+    .eq("order_id", orderId);
   if (error) throw error;
   removeCartItems((items || []).map((item) => item.product_id).filter(Boolean));
 }
 
 async function getOrderNumber(orderId) {
-  const { data, error } = await supabase.from("orders").select("order_number").eq("id", orderId).maybeSingle();
+  const { data, error } = await supabase
+    .from("orders")
+    .select("order_number")
+    .eq("id", orderId)
+    .maybeSingle();
   if (error) throw error;
   return data?.order_number || `Order ${String(orderId).slice(0, 8)}`;
 }
@@ -46,9 +53,12 @@ async function init() {
   }
 
   try {
-    const response = await fetch(`/api/paystack/verify?reference=${encodeURIComponent(reference)}`, {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    });
+    const response = await fetch(
+      `/api/paystack/verify?reference=${encodeURIComponent(reference)}`,
+      {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      },
+    );
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data?.error || "PAYMENT_VERIFICATION_FAILED");
 
@@ -56,7 +66,7 @@ async function init() {
       clearRememberedCheckoutOrder();
       if (data.order_id) {
         await removePaidItems(data.order_id);
-        const orderNumber = data.order_number || await getOrderNumber(data.order_id);
+        const orderNumber = data.order_number || (await getOrderNumber(data.order_id));
         title.textContent = "Payment confirmed";
         message.textContent = `Your payment has been verified. ${orderNumber} is now paid.`;
         show(`${orderNumber} is confirmed.`, "success");
@@ -65,26 +75,35 @@ async function init() {
         message.textContent = "Your payment has been verified and your order is now paid.";
         show("Payment confirmed.", "success");
       }
-      if (data.order_id) setTimeout(() => { window.location.href = `/order.html?id=${encodeURIComponent(data.order_id)}`; }, 1200);
+      if (data.order_id)
+        setTimeout(() => {
+          window.location.href = `/order.html?id=${encodeURIComponent(data.order_id)}`;
+        }, 1200);
       return;
     }
 
     if (data.payment_status === "failed") {
       clearRememberedCheckoutOrder();
       title.textContent = "Payment not completed";
-      message.textContent = "Paystack reported that this payment attempt failed. You can return to your orders and try again if the order is still reserved.";
+      message.textContent =
+        "Paystack reported that this payment attempt failed. You can return to your orders and try again if the order is still reserved.";
       show("Payment was not confirmed.", "error");
       return;
     }
 
     title.textContent = "Payment not completed";
-    message.textContent = "This payment attempt was not completed. Your order can still be retried while its reservation is active.";
+    message.textContent =
+      "This payment attempt was not completed. Your order can still be retried while its reservation is active.";
     show("Your payment was not completed. You can retry from My Orders.");
   } catch (error) {
     console.error(error);
     title.textContent = "Payment status unavailable";
-    message.textContent = "We could not confirm the payment right now. Check My Orders before trying to pay again.";
-    show("We could not verify the payment. Your order status remains controlled by the payment provider.", "error");
+    message.textContent =
+      "We could not confirm the payment right now. Check My Orders before trying to pay again.";
+    show(
+      "We could not verify the payment. Your order status remains controlled by the payment provider.",
+      "error",
+    );
   }
 }
 

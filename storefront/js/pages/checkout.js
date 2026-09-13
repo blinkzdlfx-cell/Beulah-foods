@@ -35,7 +35,11 @@ const returnToCart = document.getElementById("checkout-return-cart");
 const promoInput = document.getElementById("promo-code");
 const confirmNote = document.getElementById("checkout-confirm-note");
 
-const naira = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 });
+const naira = new Intl.NumberFormat("en-NG", {
+  style: "currency",
+  currency: "NGN",
+  maximumFractionDigits: 2,
+});
 const SELECTION_KEY = "beulah_checkout_selection";
 const CHECKOUT_ORDER_KEY = "beulah_checkout_order";
 
@@ -57,7 +61,10 @@ function setStatus(message, type = "") {
 }
 
 function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>\"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  return String(value ?? "").replace(
+    /[&<>\"]/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+  );
 }
 
 function hasCompleteDeliveryProfile(profile) {
@@ -89,17 +96,29 @@ function getStoredSelection() {
 function getSelectedProductIds() {
   const params = new URLSearchParams(location.search);
   const raw = params.get("items");
-  if (raw) return new Set(raw.split(",").map((id) => id.trim()).filter(Boolean));
+  if (raw)
+    return new Set(
+      raw
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean),
+    );
   return getStoredSelection();
 }
 
 function rememberCheckoutSelection(items) {
-  sessionStorage.setItem(SELECTION_KEY, JSON.stringify(items.map((item) => String(item.productId))));
+  sessionStorage.setItem(
+    SELECTION_KEY,
+    JSON.stringify(items.map((item) => String(item.productId))),
+  );
 }
 
 function rememberCheckoutOrder(orderId) {
   if (!currentSession?.user?.id || !orderId) return;
-  localStorage.setItem(CHECKOUT_ORDER_KEY, JSON.stringify({ userId: currentSession.user.id, orderId: String(orderId) }));
+  localStorage.setItem(
+    CHECKOUT_ORDER_KEY,
+    JSON.stringify({ userId: currentSession.user.id, orderId: String(orderId) }),
+  );
 }
 
 function getRememberedCheckoutOrderId() {
@@ -124,7 +143,8 @@ function resetReservationTimer() {
 function setReservationState(state, order) {
   reservationBox.hidden = false;
   reservationBox.classList.remove("is-expired", "is-cancelled");
-  reservationOrder.textContent = order?.order_number || (order?.id ? `Order ${String(order.id).slice(0, 8)}` : "");
+  reservationOrder.textContent =
+    order?.order_number || (order?.id ? `Order ${String(order.id).slice(0, 8)}` : "");
   cancelReservation.hidden = true;
   retryReservation.hidden = true;
   returnToCart.hidden = true;
@@ -133,7 +153,8 @@ function setReservationState(state, order) {
   if (state === "reserved") {
     reservationEyebrow.textContent = "Order reserved";
     reservationTitle.textContent = "Complete your payment.";
-    reservationMessage.textContent = "Your items are reserved while you complete payment. The reservation will expire when the countdown reaches 00:00.";
+    reservationMessage.textContent =
+      "Your items are reserved while you complete payment. The reservation will expire when the countdown reaches 00:00.";
     reservationCountdown.textContent = "15:00";
     cancelReservation.hidden = false;
     return;
@@ -143,7 +164,8 @@ function setReservationState(state, order) {
     reservationBox.classList.add("is-expired");
     reservationEyebrow.textContent = "Order expired";
     reservationTitle.textContent = "Your reservation has expired.";
-    reservationMessage.textContent = "The 15-minute payment window has ended, so these items are no longer reserved. Retry checkout to reserve them again if they are still available.";
+    reservationMessage.textContent =
+      "The 15-minute payment window has ended, so these items are no longer reserved. Retry checkout to reserve them again if they are still available.";
     reservationCountdown.textContent = "Expired";
     retryReservation.hidden = false;
     return;
@@ -152,7 +174,8 @@ function setReservationState(state, order) {
   reservationBox.classList.add("is-cancelled");
   reservationEyebrow.textContent = "Order cancelled";
   reservationTitle.textContent = "Your order was cancelled.";
-  reservationMessage.textContent = "The reservation has been cancelled and the items have been released. Add them to your cart again if you still want them.";
+  reservationMessage.textContent =
+    "The reservation has been cancelled and the items have been released. Add them to your cart again if you still want them.";
   reservationCountdown.hidden = true;
   returnToCart.hidden = false;
 }
@@ -161,9 +184,14 @@ async function findRememberedCheckoutOrder() {
   const orderId = getRememberedCheckoutOrderId();
   if (!orderId) return null;
 
-  const { data: order, error: orderError } = await supabase.from("orders")
-    .select("id,customer_id,order_number,status,payment_status,subtotal,delivery_fee,discount_amount,total,promo_code,created_at")
-    .eq("id", orderId).eq("customer_id", currentSession.user.id).maybeSingle();
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select(
+      "id,customer_id,order_number,status,payment_status,subtotal,delivery_fee,discount_amount,total,promo_code,created_at",
+    )
+    .eq("id", orderId)
+    .eq("customer_id", currentSession.user.id)
+    .maybeSingle();
   if (orderError) throw orderError;
   if (!order) {
     clearRememberedCheckoutOrder();
@@ -174,15 +202,20 @@ async function findRememberedCheckoutOrder() {
     return null;
   }
 
-  const { data: reservations, error: reservationError } = await supabase.from("reservations")
+  const { data: reservations, error: reservationError } = await supabase
+    .from("reservations")
     .select("id,order_id,status,expires_at,created_at")
-    .eq("order_id", order.id).order("created_at", { ascending: false }).limit(1);
+    .eq("order_id", order.id)
+    .order("created_at", { ascending: false })
+    .limit(1);
   if (reservationError) throw reservationError;
   const reservation = reservations?.[0] || null;
 
-  const { data: items, error: itemError } = await supabase.from("order_items")
+  const { data: items, error: itemError } = await supabase
+    .from("order_items")
     .select("product_id,product_name,unit_price,quantity,line_total")
-    .eq("order_id", order.id).order("created_at", { ascending: true });
+    .eq("order_id", order.id)
+    .order("created_at", { ascending: true });
   if (itemError) throw itemError;
   if (!items?.length) {
     clearRememberedCheckoutOrder();
@@ -196,8 +229,14 @@ async function findRememberedCheckoutOrder() {
   }));
 
   if (order.status === "cancelled") {
-    const wasAutoExpired = reservation?.status === "expired" && Date.parse(reservation.expires_at) <= Date.now();
-    return { state: wasAutoExpired ? "expired" : "cancelled", order, reservation, items: mappedItems };
+    const wasAutoExpired =
+      reservation?.status === "expired" && Date.parse(reservation.expires_at) <= Date.now();
+    return {
+      state: wasAutoExpired ? "expired" : "cancelled",
+      order,
+      reservation,
+      items: mappedItems,
+    };
   }
 
   if (order.status !== "pending_payment") {
@@ -205,7 +244,8 @@ async function findRememberedCheckoutOrder() {
     return null;
   }
 
-  const active = reservation?.status === "active" && Date.parse(reservation.expires_at) > Date.now();
+  const active =
+    reservation?.status === "active" && Date.parse(reservation.expires_at) > Date.now();
   return { state: active ? "reserved" : "expired", order, reservation, items: mappedItems };
 }
 
@@ -219,14 +259,23 @@ async function init() {
     return;
   }
 
-  const [profile, remembered] = await Promise.all([getCustomerProfile(), findRememberedCheckoutOrder()]);
+  const [profile, remembered] = await Promise.all([
+    getCustomerProfile(),
+    findRememberedCheckoutOrder(),
+  ]);
 
   if (remembered) {
     pendingOrderId = remembered.order.id;
     pendingReservation = remembered.reservation;
     checkoutItems = remembered.items;
     rememberCheckoutSelection(checkoutItems);
-    renderSummary({ subtotal: remembered.order.subtotal, delivery_fee: remembered.order.delivery_fee, delivery_enabled: Number(remembered.order.delivery_fee) > 0, discount: remembered.order.discount_amount, total: remembered.order.total });
+    renderSummary({
+      subtotal: remembered.order.subtotal,
+      delivery_fee: remembered.order.delivery_fee,
+      delivery_enabled: Number(remembered.order.delivery_fee) > 0,
+      discount: remembered.order.discount_amount,
+      total: remembered.order.total,
+    });
 
     if (remembered.state === "cancelled") {
       resetReservationTimer();
@@ -261,9 +310,14 @@ async function init() {
   }
 
   const selectedIds = getSelectedProductIds();
-  const sourceItems = selectedIds.size ? cart.filter((item) => selectedIds.has(String(item.productId))) : cart;
+  const sourceItems = selectedIds.size
+    ? cart.filter((item) => selectedIds.has(String(item.productId)))
+    : cart;
   if (!sourceItems.length) {
-    setStatus("No valid cart items were selected. Return to your cart and choose what to buy.", "error");
+    setStatus(
+      "No valid cart items were selected. Return to your cart and choose what to buy.",
+      "error",
+    );
     form.hidden = true;
     return;
   }
@@ -271,15 +325,26 @@ async function init() {
   rememberCheckoutSelection(sourceItems);
   const [products, deliveryResult] = await Promise.all([
     getProductsByIds(sourceItems.map((item) => item.productId)),
-    supabase.from("delivery_settings").select("delivery_fee,is_delivery_enabled").eq("is_active", true).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase
+      .from("delivery_settings")
+      .select("delivery_fee,is_delivery_enabled")
+      .eq("is_active", true)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
   if (deliveryResult.error) throw deliveryResult.error;
   deliverySettings = deliveryResult.data;
 
   const productMap = new Map(products.map((product) => [String(product.id), product]));
-  checkoutItems = sourceItems.map((item) => ({ ...item, product: productMap.get(String(item.productId)) })).filter((item) => item.product);
+  checkoutItems = sourceItems
+    .map((item) => ({ ...item, product: productMap.get(String(item.productId)) }))
+    .filter((item) => item.product);
   if (!checkoutItems.length) {
-    setStatus("The selected products are no longer available. Please return to your cart.", "error");
+    setStatus(
+      "The selected products are no longer available. Please return to your cart.",
+      "error",
+    );
     form.hidden = true;
     return;
   }
@@ -304,7 +369,10 @@ function updateReservationCountdown() {
   const remaining = Math.max(0, Date.parse(pendingReservation.expires_at) - Date.now());
   if (remaining <= 0) {
     resetReservationTimer();
-    setReservationState("expired", { id: pendingOrderId, order_number: reservationOrder.textContent });
+    setReservationState("expired", {
+      id: pendingOrderId,
+      order_number: reservationOrder.textContent,
+    });
     form.hidden = true;
     return;
   }
@@ -315,9 +383,19 @@ function updateReservationCountdown() {
   reservationCountdown.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-function isDeliveryEnabled() { return Boolean(deliverySettings?.is_delivery_enabled); }
-function calculateLocalDelivery() { return isDeliveryEnabled() ? Math.max(0, Number(deliverySettings?.delivery_fee ?? 0)) : 0; }
-function getLocalSubtotal() { return checkoutItems.reduce((total, item) => total + Number(item.product.price) * Math.max(1, Number.parseInt(item.quantity, 10) || 1), 0); }
+function isDeliveryEnabled() {
+  return Boolean(deliverySettings?.is_delivery_enabled);
+}
+function calculateLocalDelivery() {
+  return isDeliveryEnabled() ? Math.max(0, Number(deliverySettings?.delivery_fee ?? 0)) : 0;
+}
+function getLocalSubtotal() {
+  return checkoutItems.reduce(
+    (total, item) =>
+      total + Number(item.product.price) * Math.max(1, Number.parseInt(item.quantity, 10) || 1),
+    0,
+  );
+}
 
 function renderSummary(totals = null) {
   summary.innerHTML = "";
@@ -345,7 +423,10 @@ function renderSummary(totals = null) {
 async function initializePayment(orderId) {
   const response = await fetch("/api/paystack/initialize", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${currentSession.access_token}` },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${currentSession.access_token}`,
+    },
     body: JSON.stringify({ order_id: orderId }),
   });
   const data = await response.json().catch(() => ({}));
@@ -363,11 +444,16 @@ async function cancelCurrentReservation() {
   cancelReservation.disabled = true;
   cancelReservation.textContent = "Cancelling…";
   try {
-    const { error } = await supabase.rpc("cancel_pending_order", { target_order_id: pendingOrderId });
+    const { error } = await supabase.rpc("cancel_pending_order", {
+      target_order_id: pendingOrderId,
+    });
     if (error) throw error;
     resetReservationTimer();
     pendingReservation = null;
-    setReservationState("cancelled", { id: pendingOrderId, order_number: reservationOrder.textContent });
+    setReservationState("cancelled", {
+      id: pendingOrderId,
+      order_number: reservationOrder.textContent,
+    });
     form.hidden = true;
     setStatus("");
   } catch (error) {
@@ -382,7 +468,9 @@ async function retryExpiredReservation() {
   retryReservation.disabled = true;
   retryReservation.textContent = "Preparing…";
   try {
-    const { error } = await supabase.rpc("retry_expired_pending_order", { target_order_id: pendingOrderId });
+    const { error } = await supabase.rpc("retry_expired_pending_order", {
+      target_order_id: pendingOrderId,
+    });
     if (error) throw error;
     clearRememberedCheckoutOrder();
     pendingOrderId = null;
@@ -392,17 +480,29 @@ async function retryExpiredReservation() {
     retryReservation.disabled = false;
     retryReservation.textContent = "Retry checkout";
     if (error?.message?.includes("RESERVATION_STILL_ACTIVE")) {
-      setReservationState("reserved", { id: pendingOrderId, order_number: reservationOrder.textContent });
+      setReservationState("reserved", {
+        id: pendingOrderId,
+        order_number: reservationOrder.textContent,
+      });
       form.hidden = false;
-      setStatus("This reservation is still active. Please wait for the countdown to finish.", "error");
+      setStatus(
+        "This reservation is still active. Please wait for the countdown to finish.",
+        "error",
+      );
       startReservationCountdown();
       return;
     }
-    if (error?.message?.includes("ORDER_NOT_RETRYABLE") || error?.message?.includes("ORDER_NOT_FOUND")) {
+    if (
+      error?.message?.includes("ORDER_NOT_RETRYABLE") ||
+      error?.message?.includes("ORDER_NOT_FOUND")
+    ) {
       clearRememberedCheckoutOrder();
       pendingOrderId = null;
       pendingReservation = null;
-      setStatus("This reservation is no longer available. Return to your cart and start checkout again.", "error");
+      setStatus(
+        "This reservation is no longer available. Return to your cart and start checkout again.",
+        "error",
+      );
       return;
     }
     setStatus(error?.message || "Could not prepare checkout. Please try again.", "error");
@@ -416,7 +516,10 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
   setStatus("");
   if (reservationExpired()) {
-    setReservationState("expired", { id: pendingOrderId, order_number: reservationOrder.textContent });
+    setReservationState("expired", {
+      id: pendingOrderId,
+      order_number: reservationOrder.textContent,
+    });
     form.hidden = true;
     return;
   }
@@ -439,7 +542,11 @@ form.addEventListener("submit", async (event) => {
       });
       if (error) throw error;
       pendingOrderId = data.order_id;
-      pendingReservation = { id: data.reservation_id, order_id: data.order_id, expires_at: data.expires_at };
+      pendingReservation = {
+        id: data.reservation_id,
+        order_id: data.order_id,
+        expires_at: data.expires_at,
+      };
       removeCartItems(reservedProductIds);
       rememberCheckoutSelection(checkoutItems);
       rememberCheckoutOrder(pendingOrderId);
@@ -450,7 +557,10 @@ form.addEventListener("submit", async (event) => {
       startReservationCountdown();
       promoInput.disabled = true;
       submit.disabled = false;
-      setStatus(`Order ${data.order_number || "created"} is reserved. Continue to payment when ready.`, "success");
+      setStatus(
+        `Order ${data.order_number || "created"} is reserved. Continue to payment when ready.`,
+        "success",
+      );
       return;
     }
     await initializePayment(pendingOrderId);
@@ -463,17 +573,39 @@ form.addEventListener("submit", async (event) => {
     submit.disabled = false;
     submit.textContent = pendingOrderId ? "Continue to payment" : "Confirm order & reserve items";
     const message = error?.message ?? "";
-    if (message.includes("INSUFFICIENT_STOCK")) setStatus("One or more products do not have enough stock. Return to your cart and adjust the quantity.", "error");
-    else if (message.includes("PRODUCT_UNAVAILABLE")) setStatus("One or more products are no longer available. Please return to your cart.", "error");
-    else if (message.includes("DELIVERY_DETAILS_REQUIRED")) setStatus("Add your delivery details in My Account to continue.", "error");
-    else if (message.includes("DELIVERY_CONFIGURATION_INVALID")) setStatus("Delivery is temporarily unavailable. Please try again later.", "error");
-    else if (message.includes("PROMO_INVALID")) setStatus("That promo code is invalid or inactive.", "error");
-    else if (message.includes("PROMO_MINIMUM_NOT_MET")) setStatus("This promo code does not meet the minimum order amount.", "error");
+    if (message.includes("INSUFFICIENT_STOCK"))
+      setStatus(
+        "One or more products do not have enough stock. Return to your cart and adjust the quantity.",
+        "error",
+      );
+    else if (message.includes("PRODUCT_UNAVAILABLE"))
+      setStatus(
+        "One or more products are no longer available. Please return to your cart.",
+        "error",
+      );
+    else if (message.includes("DELIVERY_DETAILS_REQUIRED"))
+      setStatus("Add your delivery details in My Account to continue.", "error");
+    else if (message.includes("DELIVERY_CONFIGURATION_INVALID"))
+      setStatus("Delivery is temporarily unavailable. Please try again later.", "error");
+    else if (message.includes("PROMO_INVALID"))
+      setStatus("That promo code is invalid or inactive.", "error");
+    else if (message.includes("PROMO_MINIMUM_NOT_MET"))
+      setStatus("This promo code does not meet the minimum order amount.", "error");
     else if (message.includes("ORDER_RESERVATION_EXPIRED")) {
-      setReservationState("expired", { id: pendingOrderId, order_number: reservationOrder.textContent });
+      setReservationState("expired", {
+        id: pendingOrderId,
+        order_number: reservationOrder.textContent,
+      });
       form.hidden = true;
-      setStatus("Your payment reservation has expired. Retry checkout to reserve the items again.", "error");
-    } else if (message.includes("PAYMENT_INITIALIZATION_FAILED")) setStatus("Your order is reserved, but payment could not be opened. Please try again.", "error");
+      setStatus(
+        "Your payment reservation has expired. Retry checkout to reserve the items again.",
+        "error",
+      );
+    } else if (message.includes("PAYMENT_INITIALIZATION_FAILED"))
+      setStatus(
+        "Your order is reserved, but payment could not be opened. Please try again.",
+        "error",
+      );
     else setStatus("We could not prepare your order or payment. Please try again.", "error");
   }
 });

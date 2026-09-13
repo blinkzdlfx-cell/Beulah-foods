@@ -82,7 +82,9 @@ export function initHeader(navEl) {
     navEl.setAttribute("aria-busy", "false");
   };
 
-  getCurrentSession().then(render).catch(() => render(null));
+  getCurrentSession()
+    .then(render)
+    .catch(() => render(null));
 
   onAuthStateChange((event, session) => {
     if (!resolved) {
@@ -173,8 +175,10 @@ function renderNav(navEl, session) {
       const activeMenu = navEl.querySelector(".site-header__menu");
       const accountMenu = navEl.querySelector(".site-header__account-menu");
       const accountButton = navEl.querySelector(".site-header__account-button");
-      if (activeToggle && activeMenu && !navEl.contains(event.target)) closeMenu(activeToggle, activeMenu);
-      if (accountMenu && accountButton && !navEl.contains(event.target)) closeAccountMenu(accountButton, accountMenu);
+      if (activeToggle && activeMenu && !navEl.contains(event.target))
+        closeMenu(activeToggle, activeMenu);
+      if (accountMenu && accountButton && !navEl.contains(event.target))
+        closeAccountMenu(accountButton, accountMenu);
     });
 
     document.addEventListener("keydown", (event) => {

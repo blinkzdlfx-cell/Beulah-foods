@@ -16,12 +16,29 @@ let categories = [];
 let currentPage = 1;
 const pageSize = 12;
 const initialCategory = new URLSearchParams(window.location.search).get("category") || "";
-const naira = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 });
+const naira = new Intl.NumberFormat("en-NG", {
+  style: "currency",
+  currency: "NGN",
+  maximumFractionDigits: 2,
+});
 
-function setStatus(message, type = "") { status.textContent = message; status.className = `shop-status${type ? ` shop-status--${type}` : ""}`; status.hidden = !message; }
-function getSelectedCategory() { return document.querySelector('input[name="category"]:checked')?.value ?? ""; }
-function escapeHtml(value) { return String(value).replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character])); }
-function escapeAttribute(value) { return escapeHtml(value).replace(/'/g, "&#039;"); }
+function setStatus(message, type = "") {
+  status.textContent = message;
+  status.className = `shop-status${type ? ` shop-status--${type}` : ""}`;
+  status.hidden = !message;
+}
+function getSelectedCategory() {
+  return document.querySelector('input[name="category"]:checked')?.value ?? "";
+}
+function escapeHtml(value) {
+  return String(value).replace(
+    /[&<>\"]/g,
+    (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[character],
+  );
+}
+function escapeAttribute(value) {
+  return escapeHtml(value).replace(/'/g, "&#039;");
+}
 
 function renderCategories() {
   categoryList.innerHTML = "";
@@ -36,8 +53,12 @@ function renderCategories() {
     label.innerHTML = `<input type="radio" name="category" value="${escapeAttribute(category.slug)}"${checked}><span>${escapeHtml(category.name)}</span>`;
     categoryList.append(label);
   }
-  if (!categories.some((category) => category.slug === initialCategory)) allLabel.querySelector("input").checked = true;
-  categoryList.onchange = () => { currentPage = 1; loadProducts(); };
+  if (!categories.some((category) => category.slug === initialCategory))
+    allLabel.querySelector("input").checked = true;
+  categoryList.onchange = () => {
+    currentPage = 1;
+    loadProducts();
+  };
 }
 
 function renderProducts(products) {
@@ -58,7 +79,10 @@ function renderProducts(products) {
         const existing = getCart().find((item) => String(item.productId) === String(product.id));
         const currentQuantity = Number(existing?.quantity) || 0;
         if (currentQuantity >= stock) {
-          showToast(`Only ${stock} ${product.name} ${stock === 1 ? "is" : "are"} available.`, "error");
+          showToast(
+            `Only ${stock} ${product.name} ${stock === 1 ? "is" : "are"} available.`,
+            "error",
+          );
           return;
         }
         addToCart(product.id, 1);
@@ -76,30 +100,66 @@ function renderPagination(result) {
   pagination.innerHTML = "";
   if (result.totalPages <= 1) return;
   const fragment = document.createDocumentFragment();
-  const previous = document.createElement("button"); previous.className = "btn btn-secondary"; previous.type = "button"; previous.textContent = "Previous"; previous.disabled = result.page <= 1;
-  previous.addEventListener("click", () => { currentPage -= 1; loadProducts(); });
+  const previous = document.createElement("button");
+  previous.className = "btn btn-secondary";
+  previous.type = "button";
+  previous.textContent = "Previous";
+  previous.disabled = result.page <= 1;
+  previous.addEventListener("click", () => {
+    currentPage -= 1;
+    loadProducts();
+  });
   fragment.append(previous);
-  const label = document.createElement("span"); label.className = "shop-pagination__label"; label.textContent = `Page ${result.page} of ${result.totalPages}`; fragment.append(label);
-  const next = document.createElement("button"); next.className = "btn btn-secondary"; next.type = "button"; next.textContent = "Next"; next.disabled = result.page >= result.totalPages;
-  next.addEventListener("click", () => { currentPage += 1; loadProducts(); });
-  fragment.append(next); pagination.append(fragment);
+  const label = document.createElement("span");
+  label.className = "shop-pagination__label";
+  label.textContent = `Page ${result.page} of ${result.totalPages}`;
+  fragment.append(label);
+  const next = document.createElement("button");
+  next.className = "btn btn-secondary";
+  next.type = "button";
+  next.textContent = "Next";
+  next.disabled = result.page >= result.totalPages;
+  next.addEventListener("click", () => {
+    currentPage += 1;
+    loadProducts();
+  });
+  fragment.append(next);
+  pagination.append(fragment);
 }
 
 async function loadProducts() {
   setStatus("Loading products...");
   try {
-    const result = await getProducts({ categorySlug: getSelectedCategory(), page: currentPage, pageSize });
+    const result = await getProducts({
+      categorySlug: getSelectedCategory(),
+      page: currentPage,
+      pageSize,
+    });
     renderProducts(result.products);
     count.textContent = `${result.count} product${result.count === 1 ? "" : "s"}`;
     renderPagination(result);
     setStatus("");
-  } catch (error) { console.error(error); renderProducts([]); pagination.innerHTML = ""; setStatus("We could not load the product catalogue. Please try again.", "error"); }
+  } catch (error) {
+    console.error(error);
+    renderProducts([]);
+    pagination.innerHTML = "";
+    setStatus("We could not load the product catalogue. Please try again.", "error");
+  }
 }
 
-filterToggle?.addEventListener("click", () => { const open = filters?.hidden; if (filters) filters.hidden = !open; filterToggle.setAttribute("aria-expanded", String(open)); });
+filterToggle?.addEventListener("click", () => {
+  const open = filters?.hidden;
+  if (filters) filters.hidden = !open;
+  filterToggle.setAttribute("aria-expanded", String(open));
+});
 
 (async function init() {
-  try { categories = await getCategories(); renderCategories(); }
-  catch (error) { console.error(error); categoryList.innerHTML = '<p class="filter-error">Categories are unavailable right now.</p>'; }
+  try {
+    categories = await getCategories();
+    renderCategories();
+  } catch (error) {
+    console.error(error);
+    categoryList.innerHTML = '<p class="filter-error">Categories are unavailable right now.</p>';
+  }
   await loadProducts();
 })();

@@ -54,5 +54,6 @@ function init() {
   new MutationObserver(updateActiveNavigation).observe(nav, { childList: true, subtree: true });
 }
 
-if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
+if (document.readyState === "loading")
+  document.addEventListener("DOMContentLoaded", init, { once: true });
 else init();

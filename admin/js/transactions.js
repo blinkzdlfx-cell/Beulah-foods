@@ -9,7 +9,10 @@ const PAGE_SIZE = 25;
 let page = 1;
 
 function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character]));
+  return String(value ?? "").replace(
+    /[&<>\"]/g,
+    (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[character],
+  );
 }
 
 function formatStatus(value) {
@@ -83,7 +86,7 @@ async function load() {
     .from("payments")
     .select(
       "id,order_id,provider,provider_reference,amount,status,created_at,orders(order_number,status,payment_status)",
-      { count: "exact" }
+      { count: "exact" },
     )
     .order("created_at", { ascending: false })
     .range(from, to);
@@ -96,13 +99,15 @@ async function load() {
     return load();
   }
 
-  rows.innerHTML = (data || []).map((payment) => {
-    const order = payment.orders;
-    const orderNumber = order?.order_number || `BF-${String(payment.order_id).slice(0, 8)}`;
-    const paymentStatus = payment.status || "pending";
-    const orderStatus = order?.status || "pending_payment";
+  rows.innerHTML =
+    (data || [])
+      .map((payment) => {
+        const order = payment.orders;
+        const orderNumber = order?.order_number || `BF-${String(payment.order_id).slice(0, 8)}`;
+        const paymentStatus = payment.status || "pending";
+        const orderStatus = order?.status || "pending_payment";
 
-    return `<tr>
+        return `<tr>
       <td><strong>${escapeHtml(String(payment.id).slice(0, 8))}</strong></td>
       <td><strong>${escapeHtml(orderNumber)}</strong><small class="admin-order-id">${escapeHtml(String(payment.order_id).slice(0, 8))}</small></td>
       <td>${escapeHtml(payment.provider || "—")}</td>
@@ -112,7 +117,8 @@ async function load() {
       <td><span class="admin-status-badge ${orderClass(orderStatus)}">${escapeHtml(orderLabel(orderStatus))}</span></td>
       <td>${escapeHtml(new Date(payment.created_at).toLocaleString("en-NG"))}</td>
     </tr>`;
-  }).join("") || '<tr><td colspan="8">No transactions yet.</td></tr>';
+      })
+      .join("") || '<tr><td colspan="8">No transactions yet.</td></tr>';
 
   renderPagination(totalPages);
 }
