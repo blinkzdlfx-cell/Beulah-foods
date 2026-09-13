@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - phase2/prettier-fix
   pull_request:
     branches: [main]
 
