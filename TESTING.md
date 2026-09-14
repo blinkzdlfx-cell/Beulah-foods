@@ -14,7 +14,7 @@ The testing workflow follows the project's existing development principle:
 |---|---|---|
 | 1 | GitHub Actions foundation and repository baseline checks | 🟩 Complete |
 | 2 | Project checks: dependencies/scripts, linting, formatting, and static validation | 🟩 Complete |
-| 3 | Unit and integration tests for application/business logic | 🟨 In progress |
+| 3 | Unit and integration tests for application/business logic | 🟩 Complete |
 | 4 | Supabase/database tests: schema, RLS, RPCs, constraints, and business rules | ⬜ Not started |
 | 5 | Cloudflare Worker and API tests, including payment/email boundaries | ⬜ Not started |
 | 6 | Browser end-to-end tests with real project workflows | ⬜ Not started |
@@ -64,7 +64,12 @@ Add executable tests for application/business logic using Node's built-in test r
 
 - Stateless form validation helpers.
 - Cart data normalization and item-count behavior.
-- Additional checkout, pricing, reservation, payment, and service-boundary behavior will be added as the implementation is made testable without weakening the production contracts.
+- Checkout cart-retention and checkout-state contracts.
+- Pricing and discount calculation contracts.
+- Reservation lifecycle and expiry contracts.
+- Payment client boundary contracts.
+- Order lifecycle contracts.
+- Cart database persistence ordering and stale-response protection.
 
 ### Rules
 
@@ -110,9 +115,10 @@ Phase 3 is complete when:
 
 - Started: 2026-09-13
 - CI workflow: `.github/workflows/phase3.yml`
-- Current state: In progress
-- Initial test suite: `tests/unit/validators.test.js`, `tests/unit/cartService.test.js`
-- Completion commit: pending
+- Current state: Complete
+- Test suite: `tests/unit/*.test.js`
+- Merge commit: `881b6926c8c3864abfb8e6d29162e8cbe2ff3ca8`
+- Completion documentation commit: pending
 
 ### Phase 4
 
