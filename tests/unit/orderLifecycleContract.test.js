@@ -23,7 +23,10 @@ const cancellationMigration = await readFile(
 );
 
 test("pending-order creation requires an authenticated customer", () => {
-  assert.match(trustedCheckoutMigration, /if \(customer is null\) then raise exception 'AUTH_REQUIRED'; end if;/);
+  assert.match(
+    trustedCheckoutMigration,
+    /if \(customer is null\) then raise exception 'AUTH_REQUIRED'; end if;/,
+  );
   assert.match(trustedCheckoutMigration, /grant execute on function public\.create_pending_order/);
   assert.match(trustedCheckoutMigration, /to authenticated/);
 });
@@ -52,7 +55,10 @@ test("pending-order creation snapshots live product pricing and quantity", () =>
     trustedCheckoutMigration,
     /select id, name, price, stock_quantity, reserved_quantity, is_active/,
   );
-  assert.match(trustedCheckoutMigration, /item_total := round\(product_row\.price \* requested_quantity, 2\)/);
+  assert.match(
+    trustedCheckoutMigration,
+    /item_total := round\(product_row\.price \* requested_quantity, 2\)/,
+  );
   assert.match(
     trustedCheckoutMigration,
     /insert into public\.order_items \(order_id, product_id, product_name, unit_price, quantity, line_total\)/,
@@ -85,7 +91,10 @@ test("customer cancellation only applies to pending payment orders", () => {
 });
 
 test("cancellation restores an active reservation and releases its stock", () => {
-  assert.match(cancellationMigration, /if reservation_row\.id is not null and reservation_row\.status = 'active'/);
+  assert.match(
+    cancellationMigration,
+    /if reservation_row\.id is not null and reservation_row\.status = 'active'/,
+  );
   assert.match(
     cancellationMigration,
     /set stock_quantity = stock_quantity \+ item_row\.quantity,\s+reserved_quantity = greatest\(0, reserved_quantity - item_row\.quantity\)/,
@@ -117,8 +126,14 @@ test("late payment success cannot resurrect an expired or cancelled order", () =
 });
 
 test("explicit order links remain a locator and are validated against session ownership", () => {
-  assert.match(checkoutBridgeSource, /const explicitOrderId = params\.get\("order"\)\?\.trim\(\)/);
-  assert.match(checkoutBridgeSource, /this URL value is only a locator, never an authorization boundary/);
+  assert.match(
+    checkoutBridgeSource,
+    /const explicitOrderId = params\.get\("order"\)\?\.trim\(\)/,
+  );
+  assert.match(
+    checkoutBridgeSource,
+    /this URL value is only a locator, never an authorization boundary/,
+  );
   assert.match(checkoutSource, /\.eq\("id", orderId\)/);
   assert.match(checkoutSource, /\.eq\("customer_id", currentSession\.user\.id\)/);
 });
