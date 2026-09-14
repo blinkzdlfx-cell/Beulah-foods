@@ -2,7 +2,7 @@ import { initHeader } from "../components/navbar.js";
 import { getCurrentSession } from "../services/authService.js";
 import { getCustomerProfile } from "../services/profileService.js";
 import { getProductsByIds } from "../services/catalogService.js";
-import { getCart, removeCartItems } from "../services/cartService.js";
+import { getCart } from "../services/cartService.js";
 import { supabase } from "../lib/supabaseClient.js";
 
 initHeader(document.getElementById("site-header-nav"));
@@ -547,7 +547,6 @@ form.addEventListener("submit", async (event) => {
         order_id: data.order_id,
         expires_at: data.expires_at,
       };
-      removeCartItems(reservedProductIds);
       rememberCheckoutSelection(checkoutItems);
       rememberCheckoutOrder(pendingOrderId);
       renderSummary(data);

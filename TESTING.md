@@ -12,9 +12,9 @@ The testing workflow follows the project's existing development principle:
 
 | Phase | Scope | Status |
 |---|---|---|
-| 1 | GitHub Actions foundation and repository baseline checks | 🟨 In progress |
-| 2 | Project checks: dependencies/scripts, linting, formatting, and static validation | ⬜ Not started |
-| 3 | Unit and integration tests for application/business logic | ⬜ Not started |
+| 1 | GitHub Actions foundation and repository baseline checks | 🟩 Complete |
+| 2 | Project checks: dependencies/scripts, linting, formatting, and static validation | 🟩 Complete |
+| 3 | Unit and integration tests for application/business logic | 🟨 In progress |
 | 4 | Supabase/database tests: schema, RLS, RPCs, constraints, and business rules | ⬜ Not started |
 | 5 | Cloudflare Worker and API tests, including payment/email boundaries | ⬜ Not started |
 | 6 | Browser end-to-end tests with real project workflows | ⬜ Not started |
@@ -44,6 +44,44 @@ Phase 1 is complete when:
 3. The seven-phase plan is committed and tracked in this file.
 4. Any baseline failure is fixed or explicitly documented before Phase 2 begins.
 
+## Phase 2 — Project checks
+
+### Objective
+
+Verify the repository's development tooling, linting, formatting, and static validation before application behavior tests are expanded.
+
+### Exit criteria
+
+Phase 2 is complete when the project checks pass successfully on the merged `main` branch.
+
+## Phase 3 — Unit and integration tests
+
+### Objective
+
+Add executable tests for application/business logic using Node's built-in test runner. Tests should verify documented behavior and remain independent of browser UI and external service availability unless the behavior specifically requires integration coverage.
+
+### Initial coverage
+
+- Stateless form validation helpers.
+- Cart data normalization and item-count behavior.
+- Additional checkout, pricing, reservation, payment, and service-boundary behavior will be added as the implementation is made testable without weakening the production contracts.
+
+### Rules
+
+- Prefer Node's built-in test runner over introducing a testing framework.
+- Test business behavior rather than private implementation details.
+- Do not replace real Supabase behavior with fake tests where database behavior is the contract; those cases belong in Phase 4.
+- Do not add mock business data to production code merely to enable tests.
+
+### Exit criteria
+
+Phase 3 is complete when:
+
+1. The unit/integration test suite runs successfully in CI.
+2. Core application/business logic identified in the project documentation has meaningful coverage.
+3. Known defects exposed by the tests are fixed or explicitly documented.
+4. The Phase 3 CI workflow passes on the branch intended for merge.
+
 ## Rules for progressing phases
 
 - Complete the current phase before starting the next.
@@ -59,15 +97,21 @@ Phase 1 is complete when:
 
 - Started: 2026-09-13
 - CI workflow: `.github/workflows/test.yml`
-- Current state: In progress
-- Completion commit: pending first successful CI run
+- Current state: Complete
+- Completion commit: `2067f0d270d6e47b6ff146d89ae559c2b2bf8c68`
 
 ### Phase 2
 
-- Completion commit: pending
+- CI workflow: `.github/workflows/phase2.yml`
+- Current state: Complete
+- Completion commit: `c671901fe3f1af9bfaba4d2b1a506df6f8831465`
 
 ### Phase 3
 
+- Started: 2026-09-13
+- CI workflow: `.github/workflows/phase3.yml`
+- Current state: In progress
+- Initial test suite: `tests/unit/validators.test.js`, `tests/unit/cartService.test.js`
 - Completion commit: pending
 
 ### Phase 4
