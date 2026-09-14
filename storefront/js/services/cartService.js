@@ -2,6 +2,8 @@ const CART_KEY = "beulah_foods_cart";
 const CART_EVENT = "beulah:cart-changed";
 
 let databaseHydrationPromise = null;
+let databasePersistenceQueue = Promise.resolve();
+let cartMutationVersion = 0;
 
 function normalizeItem(item) {
   const quantity = Number.parseInt(item.quantity, 10);
@@ -24,6 +26,7 @@ export function getCart() {
 
 function saveCart(items) {
   const normalized = items.map(normalizeItem);
+  cartMutationVersion += 1;
   localStorage.setItem(CART_KEY, JSON.stringify(normalized));
   window.dispatchEvent(new CustomEvent(CART_EVENT, { detail: normalized }));
   return normalized;
@@ -39,21 +42,34 @@ async function getSupabaseCartApi() {
   return { supabase };
 }
 
+function queueDatabasePersistence(items, mode, mutationVersion) {
+  const snapshot = items.map(normalizeItem);
+  const task = async () => {
+    try {
+      const api = await getSupabaseCartApi();
+      if (!api) return null;
+      const { data, error } = await api.supabase.rpc(
+        mode === "merge" ? "merge_customer_cart" : "set_customer_cart",
+        { cart_items: snapshot },
+      );
+      if (error) throw error;
+      const databaseItems = Array.isArray(data) ? data.map(normalizeItem) : [];
+
+      // Never let a stale database response overwrite a newer local mutation.
+      if (mutationVersion === cartMutationVersion) return saveCart(databaseItems);
+      return databaseItems;
+    } catch (error) {
+      console.error("Cart database sync failed:", error);
+      return null;
+    }
+  };
+
+  databasePersistenceQueue = databasePersistenceQueue.then(task, task);
+  return databasePersistenceQueue;
+}
+
 async function persistCartToDatabase(items, mode = "set") {
-  try {
-    const api = await getSupabaseCartApi();
-    if (!api) return null;
-    const { data, error } = await api.supabase.rpc(
-      mode === "merge" ? "merge_customer_cart" : "set_customer_cart",
-      { cart_items: items.map(normalizeItem) },
-    );
-    if (error) throw error;
-    const databaseItems = Array.isArray(data) ? data.map(normalizeItem) : [];
-    return saveCart(databaseItems);
-  } catch (error) {
-    console.error("Cart database sync failed:", error);
-    return null;
-  }
+  return queueDatabasePersistence(items, mode, cartMutationVersion);
 }
 
 export async function hydrateCartFromDatabase() {
@@ -74,7 +90,8 @@ export async function hydrateCartFromDatabase() {
         return (await persistCartToDatabase(localItems, "merge")) ?? databaseItems;
       }
 
-      return saveCart(databaseItems);
+      if (cartMutationVersion === 0) return saveCart(databaseItems);
+      return getCart();
     } catch (error) {
       console.error("Cart hydration failed:", error);
       return getCart();
