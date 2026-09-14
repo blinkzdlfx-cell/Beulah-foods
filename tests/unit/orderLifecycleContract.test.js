@@ -23,18 +23,20 @@ const cancellationMigration = await readFile(
 );
 
 test("pending-order creation requires an authenticated customer", () => {
-  assert.match(
-    trustedCheckoutMigration,
-    /if \(customer is null\) then raise exception 'AUTH_REQUIRED'; end if;/,
+  assert.ok(
+    trustedCheckoutMigration.includes(
+      "if customer is null then raise exception 'AUTH_REQUIRED'; end if;",
+    ),
   );
   assert.match(trustedCheckoutMigration, /grant execute on function public\.create_pending_order/);
   assert.match(trustedCheckoutMigration, /to authenticated/);
 });
 
 test("pending-order creation rejects an empty cart", () => {
-  assert.match(
-    trustedCheckoutMigration,
-    /if jsonb_typeof\(cart_items\) <> 'array' or jsonb_array_length\(cart_items\) = 0 then raise exception 'CART_EMPTY'/,
+  assert.ok(
+    trustedCheckoutMigration.includes(
+      "if jsonb_typeof(cart_items) <> 'array' or jsonb_array_length(cart_items) = 0 then raise exception 'CART_EMPTY'; end if;",
+    ),
   );
 });
 
@@ -82,7 +84,7 @@ test("checkout resumes only a pending-payment order owned by the current user", 
 test("customer cancellation only applies to pending payment orders", () => {
   assert.match(
     cancellationMigration,
-    /if order_row\.status <> 'pending_payment' or order_row\.payment_status <> 'pending' then/,
+    /order_row\.status <> 'pending_payment' or order_row\.payment_status <> 'pending'/,
   );
   assert.match(cancellationMigration, /raise exception 'ORDER_NOT_CANCELLABLE'/);
   assert.match(
