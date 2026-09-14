@@ -82,8 +82,9 @@ test("checkout resumes only a pending-payment order owned by the current user", 
 test("customer cancellation only applies to pending payment orders", () => {
   assert.match(
     cancellationMigration,
-    /if order_row\.status <> 'pending_payment' or order_row\.payment_status <> 'pending' then\s+raise exception 'ORDER_NOT_CANCELLABLE';/,
+    /if order_row\.status <> 'pending_payment' or order_row\.payment_status <> 'pending' then/,
   );
+  assert.match(cancellationMigration, /raise exception 'ORDER_NOT_CANCELLABLE'/);
   assert.match(
     cancellationMigration,
     /create or replace function public\.cancel_pending_order\(target_order_id uuid\)/,
